@@ -1,0 +1,25 @@
+# dependencies
+node_modules
+.pnp
+.pnp.js
+
+# build
+dist
+dist-ssr
+*.local
+
+# env — never commit secrets
+.env
+.env.*
+!.env.example
+
+# editor / os
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.log
+
+# supabase
+supabase/.temp
+supabase/.branches

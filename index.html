@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/star.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NorthStar — Your AI Growth Coach</title>
+    <meta name="description" content="NorthStar turns big goals into a daily system — AI milestones, habits, reflections, and a coach that re-plans when life gets in the way." />
+    <!-- Social share (LinkedIn / Twitter / etc.) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="NorthStar — Your AI Growth Coach" />
+    <meta property="og:description" content="You tell it where you want to go. It gets you there — and keeps you accountable every step." />
+    <meta property="og:image" content="/star.svg" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="NorthStar — Your AI Growth Coach" />
+    <meta name="twitter:description" content="AI coach for goals: milestones, habits, reflections, weekly reviews." />
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+    <link
+      href="https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&f[]=satoshi@400,500,700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      // Apply theme before paint to avoid flash.
+      (function () {
+        try {
+          var p = localStorage.getItem('ns-theme') || 'system'
+          var sysDark = matchMedia('(prefers-color-scheme: dark)').matches
+          var t = p === 'system' ? (sysDark ? 'dark' : 'light') : p
+          document.documentElement.classList.add(t)
+        } catch (e) {
+          document.documentElement.classList.add('dark')
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

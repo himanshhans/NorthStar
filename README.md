@@ -11,21 +11,21 @@ Built first for one person, designed to scale to thousands.
 ## ✨ Features
 
 ### Goal engine
-- Create goals (title, category, target date, description)
-- **AI milestone generator** — a 2-step agent: web-grounded research (real book page counts, skill syllabi) → a dynamic-length, structured roadmap
-- Goal templates for one-tap starts
-- Status management: Active / Paused / Completed / Abandoned
+- Create goals (title, category, target date, description) + your **time commitment** (hours/day, days/week)
+- **AI milestone generator** — judges **feasibility** (achievable / tight / unrealistic) against your time budget, then produces a dynamic-length, buffered roadmap
+- **AI success tips** per goal (cached) and goal **templates** for one-tap starts
+- Status management: Active / Paused / Completed / Abandoned; **delete goal**, **edit milestone** inline
 - **Roadmap views** — vertical timeline *and* a drag-and-drop Kanban board (To-do / In-progress / Done)
 - Per-goal **markdown notes**
 
 ### Daily system
 - **Morning intention** — 1–3 focus tasks tied to active goals (feeds the dashboard)
-- **Mid-day nudge** — one-tap pulse (on track / slow / blocked)
+- **Mid-day nudge** — pulse check tied to today's focus tasks (tick what's done) + a short AI nudge
 - **Evening reflection** — guided prompts + free text, with honest AI coaching feedback
 
 ### Tracking & intelligence
 - **Habit tracker** — daily completion, streaks, GitHub-style heatmap, link habits to goals
-- **Life Score (0–100)** — composite of milestone progress (40%) + check-in (30%) + habit (30%) consistency, with per-category breakdown
+- **Life Score (0–100)** — milestone progress (timeliness-adjusted, 40%) + check-in consistency (30%) + habit consistency vs. each habit's own schedule (30%), with per-category breakdown
 - **Weekly deep-dive review** — AI summary, one pattern, three concrete adjustments; exportable to PDF
 - **Recovery / catch-up** — detects overdue milestones, reschedules, and breaks a missed milestone into smaller steps via AI
 - **Analytics** — Life Score trend, weekly habit completions, check-in heatmap
@@ -34,9 +34,10 @@ Built first for one person, designed to scale to thousands.
 
 ### Polish
 - Light / dark theme (system default + persistent toggle)
-- Command palette (**⌘K / Ctrl+K**) with global search + quick actions
-- Browser check-in reminders
+- Command palette (**⌘K / Ctrl+K**) with global search across goals, habits & journal
+- Browser check-in reminders; grouped check-in nav
 - First-run onboarding, loading skeletons, empty states, keyboard focus styles
+- Global error boundary (recoverable fallback instead of a blank screen)
 - Fully responsive (mobile drawer nav)
 
 ---
@@ -77,7 +78,7 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 VITE_SUPABASE_URL=https://xxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=sb_publishable_...   # Supabase "publishable" key
 ```
-> The Gemini key is **not** a frontend variable — it lives as a Supabase secret (step 5).
+> The OpenRouter key is **not** a frontend variable — it lives as a Supabase secret (step 5).
 
 See [`SETUP.md`](./SETUP.md) for the full account walkthrough, including connecting Clerk as a third-party auth provider in Supabase.
 
@@ -85,13 +86,15 @@ See [`SETUP.md`](./SETUP.md) for the full account walkthrough, including connect
 Run the migrations in order in the Supabase **SQL Editor**:
 1. `supabase/migrations/0001_init.sql` — core tables + RLS
 2. `supabase/migrations/0002_journal_notes.sql` — journal + goal notes
+3. `supabase/migrations/0003_goal_tips.sql` — cached AI tips per goal
+4. `supabase/migrations/0004_goal_commitment.sql` — time commitment per goal
 
 ### 4. Edge functions
 ```bash
 npx supabase login
 npx supabase link --project-ref <your-project-ref>
 npx supabase secrets set OPENROUTER_API_KEY=sk-or-...
-npx supabase secrets set OPENROUTER_MODEL=deepseek/deepseek-chat-v3-0324:free   # optional
+npx supabase secrets set OPENROUTER_MODEL=moonshotai/kimi-k2.6:free             # optional (verify live at openrouter.ai/models?max_price=0)
 npx supabase secrets set CLERK_ISSUER=https://<your-app>.clerk.accounts.dev     # verifies Clerk JWTs
 
 npx supabase functions deploy generate-milestones --no-verify-jwt
@@ -100,7 +103,9 @@ npx supabase functions deploy weekly-review --no-verify-jwt
 npx supabase functions deploy recovery-replan --no-verify-jwt
 npx supabase functions deploy journal-insight --no-verify-jwt
 npx supabase functions deploy goal-tips --no-verify-jwt
+npx supabase functions deploy midday-nudge --no-verify-jwt
 ```
+> Free OpenRouter models rotate — if a slug 404s ("No endpoints found"), pick a current one from [openrouter.ai/models?max_price=0](https://openrouter.ai/models?max_price=0) and set `OPENROUTER_MODEL`. The shared client auto-falls-through to a fallback model on 404. Free models also require enabling the data policy at [openrouter.ai/settings/privacy](https://openrouter.ai/settings/privacy).
 
 ### 5. Run
 ```bash
@@ -133,14 +138,15 @@ src/
   lib/          # supabase, theme, reminders, markdown, queryClient, exportPdf
 supabase/
   migrations/   # SQL schema + RLS
-  functions/    # Deno edge functions (Gemini-powered)
+  functions/    # Deno edge functions (OpenRouter-powered) + _shared/ (auth, llm)
 ```
 
 ---
 
 ## 🔐 Security
 
-- Gemini API key is server-only (Supabase secret) — never shipped to the browser
+- OpenRouter API key is server-only (Supabase secret) — never shipped to the browser
+- Every edge function verifies the Clerk JWT (`_shared/auth.ts`) before calling the model
 - Every user-owned table is protected by Row Level Security keyed on the Clerk user id
 - `.env` is gitignored; only `.env.example` is committed
 
@@ -153,4 +159,4 @@ Future ideas: accountability partner mode, voice check-ins, Google Calendar sync
 
 ---
 
-*Built with React, Supabase, Clerk, and Gemini.*
+*Built with React, Supabase, Clerk, and OpenRouter.*

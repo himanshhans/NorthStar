@@ -42,6 +42,44 @@ export function useSubmitCheckin(type) {
 }
 
 /**
+ * Mid-day nudge: save status + per-task progress, and attach a short AI nudge
+ * (best-effort — saves even if the AI call fails).
+ */
+export function useSubmitMidday() {
+  const sb = useSupabase()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ content }) => {
+      const remaining = (content.tasks || []).filter((t) => !t.done).map((t) => t.text)
+      const doneCount = (content.tasks || []).filter((t) => t.done).length
+
+      let ai_response = ''
+      try {
+        const { data, error } = await sb.functions.invoke('midday-nudge', {
+          body: {
+            status: content.status,
+            remaining,
+            doneCount,
+            totalTasks: (content.tasks || []).length,
+            blocker: content.note || null,
+          },
+        })
+        if (!error && data?.nudge) ai_response = data.nudge
+      } catch { /* nudge is optional */ }
+
+      const { data: row, error: insErr } = await sb
+        .from('checkins')
+        .insert({ type: 'midday', content, ai_response })
+        .select()
+        .single()
+      if (insErr) throw insErr
+      return row
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['checkin', 'midday', todayStr()] }),
+  })
+}
+
+/**
  * Submit an evening reflection: ask Gemini for feedback, then save the
  * check-in row with both the content and the AI response.
  */

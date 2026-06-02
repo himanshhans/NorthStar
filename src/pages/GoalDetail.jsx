@@ -1,21 +1,29 @@
-import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { PageTitle, Card, Button, ProgressBar } from '../components/ui'
 import {
   useGoal, useToggleMilestone, useUpdateGoalStatus, useUpdateGoalNotes,
-  isOverdue, useRescheduleMilestone, useReplanMilestone,
+  isOverdue, useRescheduleMilestone, useReplanMilestone, useGenerateTips,
+  useDeleteGoal, useEditMilestone,
 } from '../hooks/useGoals'
 import MilestoneBoard from '../components/MilestoneBoard'
 import { renderMarkdown } from '../lib/markdown'
 
 const statusOptions = ['Active', 'Paused', 'Completed', 'Abandoned']
+const mInput =
+  'w-full rounded-lg border border-border bg-bg px-2.5 py-1.5 text-sm text-fg placeholder:text-faint focus:border-accent focus:outline-none'
 
 export default function GoalDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { data: goal, isLoading } = useGoal(id)
   const toggle = useToggleMilestone()
   const updateStatus = useUpdateGoalStatus()
+  const del = useDeleteGoal()
+  const edit = useEditMilestone()
   const [view, setView] = useState('timeline')
+  const [editId, setEditId] = useState(null)
+  const [draft, setDraft] = useState({})
 
   if (isLoading) return <p className="text-faint">Loading…</p>
   if (!goal) return <p className="text-faint">Goal not found. <Link to="/goals" className="text-accent">Back</Link></p>
@@ -25,23 +33,49 @@ export default function GoalDetail() {
   const pct = ms.length ? Math.round((done / ms.length) * 100) : 0
   const overdue = ms.filter(isOverdue)
 
+  const startEdit = (m) => {
+    setEditId(m.id)
+    setDraft({ title: m.title, description: m.description || '', due_date: m.due_date || '' })
+  }
+  const saveEdit = async () => {
+    await edit.mutateAsync({ id: editId, goalId: goal.id, patch: draft })
+    setEditId(null)
+  }
+  async function handleDelete() {
+    if (!confirm(`Delete "${goal.title}" and all its milestones? This cannot be undone.`)) return
+    await del.mutateAsync(goal.id)
+    navigate('/goals')
+  }
+
   return (
     <>
       <PageTitle
         title={goal.title}
         subtitle={`${goal.category}${goal.target_date ? ` · 🎯 ${goal.target_date}` : ''}`}
         action={
-          <select
-            className="rounded-lg border border-border bg-bg px-3 py-2 text-sm text-fg"
-            value={goal.status}
-            onChange={(e) => updateStatus.mutate({ id: goal.id, status: e.target.value })}
-          >
-            {statusOptions.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              className="rounded-lg border border-border bg-bg px-3 py-2 text-sm text-fg"
+              value={goal.status}
+              onChange={(e) => updateStatus.mutate({ id: goal.id, status: e.target.value })}
+            >
+              {statusOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <button
+              onClick={handleDelete}
+              disabled={del.isPending}
+              title="Delete goal"
+              className="rounded-lg border border-border px-2.5 py-2 text-sm text-faint hover:border-danger hover:text-danger"
+            >
+              🗑
+            </button>
+          </div>
         }
       />
 
       {goal.description && <p className="mb-6 max-w-2xl text-muted">{goal.description}</p>}
+
+      <GoalTips goal={goal} />
 
       <Card className="mb-6 max-w-2xl">
         <div className="mb-2 flex items-center justify-between text-sm">
@@ -105,13 +139,53 @@ export default function GoalDetail() {
                     {isDone ? '✓' : ''}
                   </button>
                   <Card className={`flex-1 ${isDone || isSkipped ? 'opacity-60' : ''}`}>
-                    <p className={`font-medium ${isDone ? 'line-through' : ''}`}>{m.title}</p>
-                    {m.description && <p className="mt-1 text-sm text-muted">{m.description}</p>}
-                    {m.due_date && (
-                      <p className={`mt-2 text-xs ${over ? 'text-danger' : 'text-faint'}`}>
-                        {isSkipped ? 'skipped' : `due ${m.due_date}`}
-                        {over ? ' · overdue' : ''}
-                      </p>
+                    {editId === m.id ? (
+                      <div className="space-y-2">
+                        <input
+                          className={mInput}
+                          value={draft.title}
+                          onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
+                        />
+                        <textarea
+                          className={`${mInput} min-h-14`}
+                          value={draft.description}
+                          onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
+                        />
+                        <input
+                          type="date"
+                          className={mInput}
+                          value={draft.due_date || ''}
+                          onChange={(e) => setDraft((d) => ({ ...d, due_date: e.target.value }))}
+                        />
+                        <div className="flex gap-2">
+                          <Button onClick={saveEdit} disabled={edit.isPending}>
+                            {edit.isPending ? 'Saving…' : 'Save'}
+                          </Button>
+                          <Button variant="ghost" onClick={() => setEditId(null)}>Cancel</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="group flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <p className={`font-medium ${isDone ? 'line-through' : ''}`}>{m.title}</p>
+                          {m.description && <p className="mt-1 text-sm text-muted">{m.description}</p>}
+                          {m.due_date && (
+                            <p className={`mt-2 text-xs ${over ? 'text-danger' : 'text-faint'}`}>
+                              {isSkipped ? 'skipped' : `due ${m.due_date}`}
+                              {over ? ' · overdue' : ''}
+                            </p>
+                          )}
+                        </div>
+                        {!isSkipped && (
+                          <button
+                            onClick={() => startEdit(m)}
+                            title="Edit milestone"
+                            className="text-faint opacity-0 transition-opacity hover:text-fg group-hover:opacity-100"
+                          >
+                            ✎
+                          </button>
+                        )}
+                      </div>
                     )}
                   </Card>
                 </div>
@@ -123,6 +197,54 @@ export default function GoalDetail() {
 
       <GoalNotes goal={goal} />
     </>
+  )
+}
+
+function GoalTips({ goal }) {
+  const generate = useGenerateTips()
+  const tips = goal.tips || []
+  const tried = useRef(false)
+
+  // Auto-generate once when a goal has no tips yet.
+  useEffect(() => {
+    if (!tried.current && tips.length === 0 && !generate.isPending) {
+      tried.current = true
+      generate.mutate(goal)
+    }
+  }, [goal.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (tips.length === 0 && !generate.isPending && !generate.isError) return null
+
+  return (
+    <Card className="mb-6 max-w-2xl border-hilite/30 bg-hilite/5">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="flex items-center gap-2 text-sm font-medium text-hilite">💡 Tips to succeed</p>
+        {tips.length > 0 && (
+          <button
+            onClick={() => generate.mutate(goal)}
+            disabled={generate.isPending}
+            className="text-xs text-faint hover:text-fg"
+          >
+            {generate.isPending ? 'Refreshing…' : 'Regenerate'}
+          </button>
+        )}
+      </div>
+
+      {generate.isPending && tips.length === 0 ? (
+        <p className="text-sm text-muted">Gathering tips for this goal…</p>
+      ) : generate.isError && tips.length === 0 ? (
+        <p className="text-sm text-danger">{String(generate.error.message || generate.error)}</p>
+      ) : (
+        <ul className="space-y-2">
+          {tips.map((t, i) => (
+            <li key={i} className="flex gap-2 text-sm text-fg">
+              <span className="text-hilite">•</span>
+              <span>{t}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
   )
 }
 

@@ -12,35 +12,53 @@ const nav = [
   { to: '/goals', label: 'Goals', icon: '◆' },
   { to: '/habits', label: 'Habits', icon: '▦' },
   { to: '/calendar', label: 'Calendar', icon: '▤' },
-  { to: '/checkin/evening', label: 'Reflect', icon: '☾' },
   { to: '/journal', label: 'Journal', icon: '✎' },
   { to: '/review', label: 'Weekly Review', icon: '❧' },
   { to: '/analytics', label: 'Analytics', icon: '📈' },
   { to: '/settings', label: 'Settings', icon: '⚙' },
 ]
 
+const checkinNav = [
+  { to: '/checkin/morning', label: 'Morning', icon: '☀' },
+  { to: '/checkin/midday', label: 'Mid-day', icon: '◐' },
+  { to: '/checkin/evening', label: 'Evening', icon: '☾' },
+]
+
 function openPalette() {
   window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))
+}
+
+function NavItem({ item, onNavigate }) {
+  return (
+    <NavLink
+      to={item.to}
+      onClick={onNavigate}
+      className={({ isActive }) =>
+        `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
+          isActive ? 'bg-surface2 text-accent' : 'text-muted hover:bg-surface2 hover:text-fg'
+        }`
+      }
+    >
+      <span className="w-5 text-center opacity-80">{item.icon}</span>
+      {item.label}
+    </NavLink>
+  )
 }
 
 function NavList({ onNavigate }) {
   return (
     <nav className="flex flex-1 flex-col gap-1">
-      {nav.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          onClick={onNavigate}
-          className={({ isActive }) =>
-            `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
-              isActive ? 'bg-surface2 text-accent' : 'text-muted hover:bg-surface2 hover:text-fg'
-            }`
-          }
-        >
-          <span className="w-5 text-center opacity-80">{item.icon}</span>
-          {item.label}
-        </NavLink>
-      ))}
+      {nav.slice(0, 4).map((item) => <NavItem key={item.to} item={item} onNavigate={onNavigate} />)}
+
+      <p className="mt-3 px-3 pb-1 text-[10px] font-medium uppercase tracking-wider text-faint">Check-in</p>
+      {checkinNav.map((item) => <NavItem key={item.to} item={item} onNavigate={onNavigate} />)}
+
+      <p className="mt-3 px-3 pb-1 text-[10px] font-medium uppercase tracking-wider text-faint">Insights</p>
+      {nav.slice(4, 7).map((item) => <NavItem key={item.to} item={item} onNavigate={onNavigate} />)}
+
+      <div className="mt-3 border-t border-border pt-3">
+        <NavItem item={nav[7]} onNavigate={onNavigate} />
+      </div>
     </nav>
   )
 }

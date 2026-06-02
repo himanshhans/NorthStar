@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGoals } from '../hooks/useGoals'
 import { useHabits } from '../hooks/useHabits'
+import { useJournalEntries } from '../hooks/useJournal'
 import { useTheme } from '../lib/theme'
 
 const STATIC = [
@@ -29,6 +30,7 @@ export default function CommandPalette() {
 
   const { data: goals = [] } = useGoals()
   const { data: habits = [] } = useHabits()
+  const { data: journal = [] } = useJournalEntries()
 
   // Open on ⌘K / Ctrl+K
   useEffect(() => {
@@ -64,12 +66,26 @@ export default function CommandPalette() {
     const habitItems = habits.map((h) => ({
       id: `h-${h.id}`, label: h.title, hint: 'Habit', icon: '▦', to: '/habits', kw: h.title.toLowerCase(),
     }))
-    const all = [...actions, ...goalItems, ...habitItems]
+    // Journal entries: only surface when actively searching (keeps default list clean).
+    const journalItems = term
+      ? journal
+          .filter((e) => e.content?.toLowerCase().includes(term))
+          .slice(0, 5)
+          .map((e) => ({
+            id: `j-${e.id}`,
+            label: e.content.slice(0, 60) + (e.content.length > 60 ? '…' : ''),
+            hint: 'Journal',
+            icon: '✎',
+            to: '/journal',
+            kw: e.content.toLowerCase(),
+          }))
+      : []
+    const all = [...actions, ...goalItems, ...habitItems, ...journalItems]
     if (!term) return all.slice(0, 9)
     return all
       .filter((it) => it.label.toLowerCase().includes(term) || it.kw?.includes(term))
       .slice(0, 12)
-  }, [q, goals, habits, cycleTheme])
+  }, [q, goals, habits, journal, cycleTheme])
 
   useEffect(() => { setSel(0) }, [q])
 
@@ -88,7 +104,7 @@ export default function CommandPalette() {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-center px-4 pt-24">
+    <div className="fixed inset-0 z-60 flex items-start justify-center px-4 pt-24">
       <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
       <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
         <input

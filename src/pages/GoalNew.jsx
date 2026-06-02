@@ -28,19 +28,25 @@ export default function GoalNew() {
     category: 'Personal',
     description: '',
     target_date: '',
+    hoursPerDay: '1',
+    daysPerWeek: '5',
   })
   const [milestones, setMilestones] = useState([])
+  const [feasibility, setFeasibility] = useState(null)
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
   async function handleGenerate() {
-    const ms = await generate.mutateAsync({
+    const res = await generate.mutateAsync({
       title: form.title,
       category: form.category,
       description: form.description,
       target_date: form.target_date || undefined,
+      hoursPerDay: Number(form.hoursPerDay) || undefined,
+      daysPerWeek: Number(form.daysPerWeek) || undefined,
     })
-    setMilestones(ms)
+    setMilestones(res.milestones)
+    setFeasibility(res.feasibility)
     setStep(2)
   }
 
@@ -60,6 +66,10 @@ export default function GoalNew() {
       category: form.category,
       description: form.description || null,
       target_date: form.target_date || null,
+      commitment: {
+        hoursPerDay: Number(form.hoursPerDay) || null,
+        daysPerWeek: Number(form.daysPerWeek) || null,
+      },
     }
     const created = await create.mutateAsync({ goal, milestones })
     navigate(`/goals/${created.id}`)
@@ -114,6 +124,30 @@ export default function GoalNew() {
               </div>
             </div>
 
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm text-muted">Hours per day</label>
+                <input
+                  type="number" min="0.5" step="0.5"
+                  className={input}
+                  value={form.hoursPerDay}
+                  onChange={set('hoursPerDay')}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-muted">Days per week</label>
+                <input
+                  type="number" min="1" max="7" step="1"
+                  className={input}
+                  value={form.daysPerWeek}
+                  onChange={set('daysPerWeek')}
+                />
+              </div>
+            </div>
+            <p className="-mt-2 text-xs text-faint">
+              How much time you'll realistically commit — the AI checks if your goal fits and paces around it (with buffer days).
+            </p>
+
             <div>
               <label className="mb-1 block text-sm text-muted">Description</label>
               <textarea
@@ -146,6 +180,7 @@ export default function GoalNew() {
 
       {step === 2 && (
         <div className="max-w-2xl space-y-4">
+          {feasibility && <FeasibilityBanner f={feasibility} />}
           {milestones.map((m, i) => (
             <Card key={i}>
               <div className="flex items-start gap-3">
@@ -196,5 +231,23 @@ export default function GoalNew() {
         </div>
       )}
     </>
+  )
+}
+
+const VERDICT = {
+  achievable: { icon: '✅', label: 'Achievable', cls: 'border-success/40 bg-success/5 text-success' },
+  tight: { icon: '⚠️', label: 'Tight', cls: 'border-accent/40 bg-accent/5 text-accent' },
+  unrealistic: { icon: '🛑', label: 'Unrealistic', cls: 'border-danger/40 bg-danger/5 text-danger' },
+}
+
+function FeasibilityBanner({ f }) {
+  const v = VERDICT[f.verdict] || VERDICT.achievable
+  return (
+    <div className={`rounded-xl border p-4 ${v.cls}`}>
+      <p className="flex items-center gap-2 text-sm font-medium">
+        {v.icon} {v.label}
+      </p>
+      {f.note && <p className="mt-1 text-sm text-fg">{f.note}</p>}
+    </div>
   )
 }

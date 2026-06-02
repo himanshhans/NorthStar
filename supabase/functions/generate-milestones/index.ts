@@ -1,18 +1,11 @@
 // @ts-nocheck — Deno runtime (Supabase Edge Function); not type-checked by the app's TS server.
 // Supabase Edge Function: generate-milestones
-// 2-step agent:
-//   1) RESEARCH — Gemini with Google Search grounding looks up real facts
-//      (a book's page/chapter count, a realistic skill syllabus, etc.)
-//   2) PLAN     — Gemini turns goal + research into a dynamic-length, structured
-//      milestone list (JSON). Count is decided by the model to fit scope + timeframe.
+// Turns a goal + the user's time commitment into a feasibility verdict AND a
+// realistic, buffered milestone roadmap (JSON) via OpenRouter.
 //
-// The Gemini key lives only here (Supabase secret) — never in the browser.
 // Deploy:  npx supabase functions deploy generate-milestones --no-verify-jwt
-// Secret:  npx supabase secrets set GEMINI_API_KEY=...   (key starts AIza)
-//          npx supabase secrets set GEMINI_MODEL=gemini-2.5-pro   (optional)
-
-const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") ?? "gemini-2.5-flash";
-const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+import { getUserId } from "../_shared/auth.ts";
+import { callLLM, parseJsonLoose } from "../_shared/llm.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,102 +19,73 @@ interface GoalInput {
   category?: string;
   description?: string;
   target_date?: string;
+  hoursPerDay?: number;
+  daysPerWeek?: number;
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const apiKey = Deno.env.get("GEMINI_API_KEY");
-    if (!apiKey) return json({ error: "GEMINI_API_KEY not configured" }, 500);
+    const userId = await getUserId(req);
+    if (!userId) return json({ error: "Unauthorized" }, 401);
 
     const goal = (await req.json()) as GoalInput;
     if (!goal?.title) return json({ error: "Missing goal.title" }, 400);
 
     const today = new Date().toISOString().slice(0, 10);
-    const goalBlock =
+    const hoursPerDay = Number(goal.hoursPerDay) || null;
+    const daysPerWeek = Number(goal.daysPerWeek) || null;
+
+    // Rough available-time budget (the model refines the judgment).
+    let budgetLine = "Time commitment: not specified — assume a moderate, sustainable pace.";
+    if (hoursPerDay && daysPerWeek && goal.target_date) {
+      const days = Math.max(0, Math.round((+new Date(goal.target_date) - +new Date(today)) / 86400000));
+      const weeks = (days / 7).toFixed(1);
+      const totalHours = Math.round(hoursPerDay * daysPerWeek * (days / 7));
+      budgetLine =
+        `Time commitment: ${hoursPerDay} h/day × ${daysPerWeek} day/week. ` +
+        `Horizon: ~${weeks} weeks (${days} days) to target. ` +
+        `Rough available study time: ~${totalHours} hours BEFORE buffer.`;
+    } else if (hoursPerDay && daysPerWeek) {
+      budgetLine = `Time commitment: ${hoursPerDay} h/day × ${daysPerWeek} day/week (no target date — propose a realistic horizon).`;
+    }
+
+    const prompt =
+      `You are NorthStar, a sharp, realistic personal growth coach. Given a goal and the user's ` +
+      `real time budget, FIRST judge feasibility, THEN build the most logical achievable roadmap. ` +
+      `Return ONLY JSON.\n\n` +
       `Goal title: ${goal.title}\n` +
       `Category: ${goal.category ?? "unspecified"}\n` +
       `Description: ${goal.description ?? "(none)"}\n` +
       `Today: ${today}\n` +
-      `Target date: ${goal.target_date ?? "(none given)"}`;
-
-    // ---------- Step 1: RESEARCH (web-grounded) ----------
-    const researchPrompt =
-      `You are a research assistant planning a personal goal. Use web search to gather ` +
-      `ONLY the concrete facts needed to build a realistic plan. Be specific with numbers.\n\n` +
-      `${goalBlock}\n\n` +
-      `Find things like: if it names a book -> its real page count, chapter count, and rough ` +
-      `time to read. If it's a skill (e.g. "learn DSA") -> the standard topics/curriculum and a ` +
-      `realistic learning sequence. If it has a numeric target -> sensible weekly pace. ` +
-      `Reply in 4-8 short bullet points of facts only. No plan yet.`;
-
-    let research = "";
-    try {
-      const r = await callGemini(apiKey, GEMINI_MODEL, {
-        contents: [{ parts: [{ text: researchPrompt }] }],
-        tools: [{ google_search: {} }],
-      });
-      research = extractText(r) || "(no research findings)";
-    } catch (_e) {
-      research = "(research step unavailable — plan from general knowledge)";
-    }
-
-    // ---------- Step 2: PLAN (structured JSON, dynamic length) ----------
-    const planPrompt =
-      `You are NorthStar, a sharp, no-nonsense personal growth coach.\n` +
-      `Build a milestone roadmap for this goal using the research facts below.\n\n` +
-      `${goalBlock}\n\n` +
-      `RESEARCH FINDINGS:\n${research}\n\n` +
+      `Target date: ${goal.target_date ?? "(none — propose a realistic finish)"}\n` +
+      `${budgetLine}\n\n` +
       `RULES — follow strictly:\n` +
-      `1. YOU decide how many milestones the goal genuinely needs — no fixed number. ` +
-      `A short book might be 3-4; "learn DSA in 6 months" might be 8-14. Scale to real scope ` +
-      `AND the timeframe. Never pad; never cram.\n` +
-      `2. HONOR the goal's stated number AND assume ZERO prior progress. Start from the first ` +
-      `unit (book 1) — never assume earlier units are already done because of the calendar date. ` +
-      `If the goal says 12 books, plan all 12 starting now; the milestones together must reach 12. ` +
-      `If time is short, pack more per milestone rather than dropping or skipping units. ` +
-      `The cumulative total of the final milestone MUST equal the stated target.\n` +
-      `3. GROUP units when there are many — don't make one milestone per unit. For "12 books" use ` +
-      `~4-6 milestones each covering 2-3 books ("Finish books 1-3"), not 12 separate ones. ` +
-      `For a single book -> split by real chapters/pages. For a skill -> sequence real topics.\n` +
-      `4. NO logistics/setup milestones (buy, locate, set up space) and NO planning-the-plan ` +
-      `milestones (make a schedule, assess current state). Every milestone = real progress.\n` +
-      `5. BAN vague verbs (assess, explore, understand, internalize) and fluff. Plain language. ` +
-      `Avoid generic placeholders like "Read Book 1" — say what's actually done and the running total.\n` +
-      `6. Pace due_date (YYYY-MM-DD) realistically across today->target date, evenly, in order. ` +
-      `The last milestone's due_date lands on/just before the target date and represents the ` +
-      `FULL stated goal achieved (all 12 books, the whole target).\n` +
-      `7. Title max ~8 words. Description = one sentence: specific action + its metric (incl. running total).`;
+      `1. FEASIBILITY: estimate the real effort this goal needs (hours), compare to the available ` +
+      `time MINUS a ~15-20% buffer. Verdict = "achievable", "tight", or "unrealistic".\n` +
+      `   - achievable: comfortably fits. Plan normally.\n` +
+      `   - tight: fits only with discipline. Plan lean, note the risk.\n` +
+      `   - unrealistic: cannot fit. Either (a) plan the BEST reduced-scope version that DOES fit ` +
+      `the time and say what you trimmed, or (b) keep full scope but state the realistic finish ` +
+      `date it actually needs. Pick whichever serves the user; explain in the note.\n` +
+      `2. PACE to the committed days only (e.g. ${daysPerWeek ?? "the stated"} days/week) — never ` +
+      `assume 7 days. Leave buffer/catch-up slack so a missed day doesn't break the plan. Do NOT ` +
+      `pack the schedule to the last day; finish on or comfortably before the target.\n` +
+      `3. Size each milestone to the weekly time budget (hours/week). Heavier weeks only if the ` +
+      `budget allows. Don't front-load impossibly.\n` +
+      `4. YOU decide the milestone count — scale to scope AND time. Honor any stated number in the ` +
+      `goal; assume ZERO prior progress; group many units sensibly ("Finish books 1-3").\n` +
+      `5. NO logistics/setup or planning-the-plan milestones. BAN vague verbs and fluff. Each ` +
+      `milestone = concrete, measurable progress with a metric.\n` +
+      `6. due_date (YYYY-MM-DD) in order, paced across today->target realistically.\n\n` +
+      `Return JSON exactly:\n` +
+      `{"feasibility": {"verdict": "achievable|tight|unrealistic", "note": string (1-2 sentences, ` +
+      `mention buffer + realistic finish if relevant)},\n` +
+      ` "milestones": [{"title": string, "description": string, "due_date": "YYYY-MM-DD"}]}`;
 
-    const planResp = await callGemini(apiKey, GEMINI_MODEL, {
-      contents: [{ parts: [{ text: planPrompt }] }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "object",
-          properties: {
-            milestones: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  title: { type: "string" },
-                  description: { type: "string" },
-                  due_date: { type: "string" },
-                },
-                required: ["title", "description", "due_date"],
-              },
-            },
-          },
-          required: ["milestones"],
-        },
-      },
-    });
+    const parsed = parseJsonLoose(await callLLM({ prompt, json: true, temperature: 0.6 }));
 
-    const parsed = JSON.parse(extractText(planResp) || "{}");
     const milestones = (parsed.milestones ?? []).map(
       (m: Record<string, unknown>, i: number) => ({
         title: String(m.title ?? `Milestone ${i + 1}`),
@@ -131,45 +95,18 @@ Deno.serve(async (req) => {
       }),
     );
 
-    return json({ milestones }, 200);
+    const feasibility = parsed.feasibility
+      ? {
+          verdict: String(parsed.feasibility.verdict ?? "achievable"),
+          note: String(parsed.feasibility.note ?? ""),
+        }
+      : null;
+
+    return json({ milestones, feasibility }, 200);
   } catch (err) {
     return json({ error: String(err) }, 500);
   }
 });
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-// Retries transient 503/429 with backoff; falls back to flash if pro stays overloaded.
-async function callGemini(apiKey: string, model: string, body: unknown) {
-  const models = model.includes("pro") ? [model, "gemini-2.5-flash"] : [model];
-  let lastErr = "";
-  for (const m of models) {
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const res = await fetch(`${BASE}/${m}:generateContent?key=${apiKey}`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (res.ok) return await res.json();
-      const detail = await res.text();
-      lastErr = `Gemini ${res.status}: ${detail}`;
-      // retry only transient overload/rate errors
-      if (res.status === 503 || res.status === 429) {
-        await sleep(800 * (attempt + 1));
-        continue;
-      }
-      throw new Error(lastErr); // non-transient → fail fast
-    }
-    // exhausted retries on this model → try next (flash)
-  }
-  throw new Error(lastErr);
-}
-
-// Grounded responses can split text across multiple parts — join them all.
-function extractText(data: { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }): string {
-  const parts = data?.candidates?.[0]?.content?.parts ?? [];
-  return parts.map((p) => p.text ?? "").join("").trim();
-}
 
 function json(payload: unknown, status: number) {
   return new Response(JSON.stringify(payload), {

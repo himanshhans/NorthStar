@@ -5,10 +5,12 @@ import { Logo, LogoWord } from '../components/Logo'
 import ThemeToggle from '../components/ThemeToggle'
 
 const features = [
-  { icon: '◆', title: 'Goal Engine', text: 'Describe a goal in plain words. AI breaks it into milestones with deadlines.' },
-  { icon: '☾', title: 'Daily Coach', text: 'Morning intentions, mid-day nudges, evening reflections — all AI-guided.' },
-  { icon: '▦', title: 'Habit Tracker', text: 'Streaks, heatmaps, and habits tied to the goals that matter.' },
-  { icon: '📈', title: 'Life Score', text: 'One composite score across Personal, Career, and Learning — trending daily.' },
+  { icon: '◆', title: 'AI Roadmaps', text: 'Describe a goal and your real schedule. AI judges if it fits your time, then maps milestones with buffer built in.' },
+  { icon: '☾', title: 'Daily Coach', text: 'Morning intentions, mid-day nudges, evening reflections — all AI-guided and tied to your goals.' },
+  { icon: '▦', title: 'Habits & Streaks', text: 'Daily reps with streaks and a contribution heatmap, linked to the goals that matter.' },
+  { icon: '📈', title: 'Life Score & Analytics', text: 'One composite score across Personal, Career, and Learning, with trends over time.' },
+  { icon: '❧', title: 'Weekly Reviews', text: 'An AI deep-dive every week — what happened, the pattern, three adjustments. Export to PDF.' },
+  { icon: '🔄', title: 'Catch-up & Journal', text: 'Slipped? AI re-plans missed milestones into smaller steps. Plus a reflective AI journal.' },
 ]
 
 export default function Landing() {
@@ -47,7 +49,7 @@ export default function Landing() {
             </div>
           </section>
 
-          <section className="mx-auto grid max-w-5xl gap-5 px-6 pb-28 sm:grid-cols-2">
+          <section className="mx-auto grid max-w-5xl gap-5 px-6 pb-10 sm:grid-cols-2">
             {features.map((f) => (
               <div key={f.title} className="rounded-2xl border border-border bg-surface p-6">
                 <span className="text-2xl text-accent">{f.icon}</span>
@@ -56,6 +58,10 @@ export default function Landing() {
               </div>
             ))}
           </section>
+
+          <p className="mx-auto mb-24 max-w-2xl px-6 text-center text-sm text-faint">
+            ⌘K command palette · calendar view · goal templates · markdown notes · check-in reminders · light & dark · works on mobile
+          </p>
 
           <footer className="border-t border-border py-8 text-center text-sm text-faint">
             NorthStar · Built for one, designed for thousands ·{' '}

@@ -1,8 +1,8 @@
 // @ts-nocheck — Deno runtime (Supabase Edge Function); not type-checked by the app's TS server.
-// Supabase Edge Function: weekly-review
-// Pre-aggregated week snapshot -> {summary, insights, adjustments[3]} (JSON) via OpenRouter.
+// Supabase Edge Function: goal-tips
+// 4-6 practical tips for achieving a goal (+ a pitfall), JSON, via OpenRouter.
 //
-// Deploy:  npx supabase functions deploy weekly-review --no-verify-jwt
+// Deploy:  npx supabase functions deploy goal-tips --no-verify-jwt
 import { getUserId } from "../_shared/auth.ts";
 import { callLLM, parseJsonLoose } from "../_shared/llm.ts";
 
@@ -20,27 +20,23 @@ Deno.serve(async (req) => {
     const userId = await getUserId(req);
     if (!userId) return json({ error: "Unauthorized" }, 401);
 
-    const snap = await req.json();
+    const goal = await req.json();
+    if (!goal?.title) return json({ error: "Missing goal.title" }, 400);
 
     const prompt =
-      `You are NorthStar — coach, analyst, mentor. Write a weekly deep-dive from this snapshot. ` +
-      `Be honest and specific; use the real numbers. Return ONLY JSON.\n\n` +
-      `WEEK SNAPSHOT (JSON):\n${JSON.stringify(snap, null, 2)}\n\n` +
-      `Return JSON exactly:\n` +
-      `{"summary": string (2-3 sentences on how the week went),\n` +
-      ` "insights": string (2-3 sentences naming ONE real pattern tied to goals/habits),\n` +
-      ` "adjustments": [exactly 3 concrete, actionable changes for next week, each a string]}`;
+      `You are NorthStar, an expert coach. Give 4-6 practical, specific tips for ACHIEVING this goal. ` +
+      `Mix concrete tactics with one or two common pitfalls to avoid. Return ONLY JSON.\n\n` +
+      `Goal: ${goal.title}\n` +
+      `Category: ${goal.category ?? "unspecified"}\n` +
+      `Description: ${goal.description ?? "(none)"}\n\n` +
+      `RULES: specific to THIS goal (no generic "stay motivated"); actionable today; one short sentence ` +
+      `each; include at least one "avoid this" pitfall.\n\n` +
+      `Return JSON exactly: {"tips": [string, ...]}`;
 
     const parsed = parseJsonLoose(await callLLM({ prompt, json: true, temperature: 0.7 }));
+    const tips = (parsed.tips ?? []).slice(0, 6).map(String).filter(Boolean);
 
-    return json(
-      {
-        summary: String(parsed.summary ?? ""),
-        insights: String(parsed.insights ?? ""),
-        adjustments: (parsed.adjustments ?? []).slice(0, 3).map(String),
-      },
-      200,
-    );
+    return json({ tips }, 200);
   } catch (err) {
     return json({ error: String(err) }, 500);
   }

@@ -70,6 +70,38 @@ export function useCreateGoal() {
   })
 }
 
+/** Generate AI success tips for a goal and cache them on the goal row. */
+export function useGenerateTips() {
+  const sb = useSupabase()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (goal) => {
+      const { data, error } = await sb.functions.invoke('goal-tips', {
+        body: {
+          title: goal.title,
+          category: goal.category,
+          description: goal.description,
+        },
+      })
+      if (error) {
+        let msg = error.message
+        try {
+          const b = await error.context?.json()
+          msg = [b?.error, b?.detail].filter(Boolean).join(' — ') || msg
+        } catch { /* */ }
+        throw new Error(msg)
+      }
+      if (data?.error) throw new Error(data.error)
+
+      const tips = data.tips ?? []
+      const { error: upErr } = await sb.from('goals').update({ tips }).eq('id', goal.id)
+      if (upErr) throw upErr
+      return tips
+    },
+    onSuccess: (_d, goal) => qc.invalidateQueries({ queryKey: ['goal', goal.id] }),
+  })
+}
+
 export function useUpdateGoalNotes() {
   const sb = useSupabase()
   const qc = useQueryClient()
@@ -79,6 +111,32 @@ export function useUpdateGoalNotes() {
       if (error) throw error
     },
     onSuccess: (_d, v) => qc.invalidateQueries({ queryKey: ['goal', v.id] }),
+  })
+}
+
+export function useDeleteGoal() {
+  const sb = useSupabase()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id) => {
+      // milestones cascade-delete via FK; habits keep (goal_id set null)
+      const { error } = await sb.from('goals').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['goals'] }),
+  })
+}
+
+/** Edit a milestone's editable fields (title / description / due_date). */
+export function useEditMilestone() {
+  const sb = useSupabase()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, patch }) => {
+      const { error } = await sb.from('milestones').update(patch).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: (_d, v) => qc.invalidateQueries({ queryKey: ['goal', v.goalId] }),
   })
 }
 
@@ -242,7 +300,7 @@ export function useGenerateMilestones() {
         throw new Error(msg)
       }
       if (data?.error) throw new Error(data.error)
-      return data.milestones ?? []
+      return { milestones: data.milestones ?? [], feasibility: data.feasibility ?? null }
     },
   })
 }

@@ -24,7 +24,7 @@ export function useHabits() {
   })
 }
 
-/** All habit logs in the last `days` window — for streaks + heatmap. */
+/** Completed habit logs (active habits only) in the last `days` window — for streaks + heatmap. */
 export function useHabitLogs(days = 120) {
   const sb = useSupabase()
   return useQuery({
@@ -32,9 +32,11 @@ export function useHabitLogs(days = 120) {
     queryFn: async () => {
       const { data, error } = await sb
         .from('habit_logs')
-        .select('habit_id, date, completed')
+        // inner-join habits + filter is_active so archived habits' logs don't leak in
+        .select('habit_id, date, completed, habits!inner(is_active)')
         .gte('date', daysAgoStr(days))
         .eq('completed', true)
+        .eq('habits.is_active', true)
       if (error) throw error
       return data
     },

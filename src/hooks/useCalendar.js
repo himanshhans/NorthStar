@@ -1,15 +1,24 @@
 import { useQuery } from '@tanstack/react-query'
 import { useSupabase } from '../lib/supabase'
 
+// Bound the daily-growing tables to a window so the query stays fast as data piles up.
+const windowStart = () => {
+  const d = new Date()
+  d.setDate(d.getDate() - 400)
+  return d.toISOString().slice(0, 10)
+}
+
 export function useCalendar() {
   const sb = useSupabase()
   return useQuery({
     queryKey: ['calendar'],
     queryFn: async () => {
+      const since = windowStart()
       const [msRes, ciRes, logsRes] = await Promise.all([
+        // milestones are few (bounded by goal count) — keep all, future dates included
         sb.from('milestones').select('id, title, due_date, status, goals(title)').not('due_date', 'is', null),
-        sb.from('checkins').select('type, date'),
-        sb.from('habit_logs').select('date').eq('completed', true),
+        sb.from('checkins').select('type, date').gte('date', since),
+        sb.from('habit_logs').select('date').eq('completed', true).gte('date', since),
       ])
       for (const r of [msRes, ciRes, logsRes]) if (r.error) throw r.error
 

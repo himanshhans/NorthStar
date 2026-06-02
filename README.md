@@ -50,10 +50,10 @@ Built first for one person, designed to scale to thousands.
 | State / data | Zustand + TanStack React Query |
 | Auth | Clerk |
 | Database | Supabase (PostgreSQL + Row Level Security) |
-| AI | Google Gemini, via Supabase Edge Functions (Deno) |
+| AI | OpenRouter (free LLMs, e.g. DeepSeek V3 / Llama 3.3 70B), via Supabase Edge Functions (Deno) |
 | Charts | Recharts · **Drag & drop** dnd-kit · **Markdown** marked + DOMPurify |
 
-**Architecture note:** All AI calls run inside Supabase Edge Functions so the Gemini key stays server-side, never in the browser. Clerk issues the session JWT; Supabase RLS authorizes each row by `auth.jwt()->>'sub'`.
+**Architecture note:** All AI calls run inside Supabase Edge Functions so the LLM key stays server-side, never in the browser. Each function also verifies the Clerk JWT before calling the model. Clerk issues the session JWT; Supabase RLS authorizes each row by `auth.jwt()->>'sub'`.
 
 ---
 
@@ -63,7 +63,7 @@ Built first for one person, designed to scale to thousands.
 - Node.js 18+
 - A [Supabase](https://supabase.com) project
 - A [Clerk](https://clerk.com) application
-- A [Google AI Studio](https://aistudio.google.com/apikey) API key (`AIza...`)
+- An [OpenRouter](https://openrouter.ai/keys) API key (`sk-or-...`) — free models available
 
 ### 1. Install
 ```bash
@@ -90,14 +90,16 @@ Run the migrations in order in the Supabase **SQL Editor**:
 ```bash
 npx supabase login
 npx supabase link --project-ref <your-project-ref>
-npx supabase secrets set GEMINI_API_KEY=AIza...
-npx supabase secrets set GEMINI_MODEL=gemini-2.5-flash   # or gemini-2.5-pro
+npx supabase secrets set OPENROUTER_API_KEY=sk-or-...
+npx supabase secrets set OPENROUTER_MODEL=deepseek/deepseek-chat-v3-0324:free   # optional
+npx supabase secrets set CLERK_ISSUER=https://<your-app>.clerk.accounts.dev     # verifies Clerk JWTs
 
 npx supabase functions deploy generate-milestones --no-verify-jwt
 npx supabase functions deploy reflection-feedback --no-verify-jwt
 npx supabase functions deploy weekly-review --no-verify-jwt
 npx supabase functions deploy recovery-replan --no-verify-jwt
 npx supabase functions deploy journal-insight --no-verify-jwt
+npx supabase functions deploy goal-tips --no-verify-jwt
 ```
 
 ### 5. Run

@@ -175,32 +175,32 @@ ai_insights (text), score_snapshot (JSON), created_at
 
 ## 8. Build Phases
 
-### Phase 1 — Core MVP (Weeks 1–3)
-- [ ] Project setup: React + Tailwind + Supabase + Claude API
-- [ ] Auth: login, signup, protected routes
-- [ ] Goal creation wizard with AI milestone generation
-- [ ] Dashboard with active goals and today's focus
-- [ ] Evening reflection check-in (simplest touchpoint first)
-- [ ] Basic progress bars per goal
+### Phase 1 — Core MVP (Weeks 1–3) ✅
+- [x] Project setup: React + Tailwind + Supabase + Gemini API
+- [x] Auth: login, signup, protected routes (Clerk)
+- [x] Goal creation wizard with AI milestone generation
+- [x] Dashboard with active goals and today's focus
+- [x] Evening reflection check-in
+- [x] Basic progress bars per goal
 
-### Phase 2 — Habit & Tracking Layer (Weeks 4–5)
-- [ ] Habit tracker with daily completion
-- [ ] Streak calendar (heatmap)
-- [ ] Morning intention + mid-day nudge check-ins
-- [ ] Life Score calculation logic + dashboard widget
+### Phase 2 — Habit & Tracking Layer (Weeks 4–5) ✅
+- [x] Habit tracker with daily completion
+- [x] Streak calendar (heatmap)
+- [x] Morning intention + mid-day nudge check-ins
+- [x] Life Score calculation logic + dashboard widget
 
-### Phase 3 — Intelligence & Analytics (Weeks 6–7)
-- [ ] AI roadmap generator (full timeline view)
-- [ ] Weekly deep-dive review (auto-generated)
-- [ ] Recovery/catch-up system
-- [ ] Analytics page: trend charts, life score history
+### Phase 3 — Intelligence & Analytics (Weeks 6–7) ✅
+- [x] AI roadmap generator (full timeline view)
+- [x] Weekly deep-dive review (on-demand; cron TODO)
+- [x] Recovery/catch-up system
+- [x] Analytics page: trend charts, life score history
 
-### Phase 4 — Polish & Share (Week 8)
-- [ ] Landing page for sharing on LinkedIn
-- [ ] Mobile responsiveness audit
-- [ ] Onboarding flow for new users
-- [ ] Performance + accessibility pass
-- [ ] Custom domain setup
+### Phase 4 — Polish & Share (Week 8) ✅ (core)
+- [x] Landing page for sharing on LinkedIn
+- [x] Mobile responsiveness audit
+- [x] Onboarding flow for new users
+- [~] Performance + accessibility pass (code-split done; Lighthouse + full a11y audit TODO)
+- [ ] Custom domain setup *(ops)*
 
 ---
 
@@ -255,7 +255,7 @@ ai_insights (text), score_snapshot (JSON), created_at
 
 Use this as your single source of truth as you build. Check items off as they're completed.
 
-> **Stack note (Phase 1):** Auth = **Clerk** (not Supabase Auth). AI = **Gemini API** (not Claude), called via a **Supabase Edge Function** so the key stays server-side.
+> **Stack note:** Auth = **Clerk** (not Supabase Auth). AI = **OpenRouter** free LLMs (DeepSeek V3 / Llama 3.3 70B) — migrated off Gemini due to free-tier rate limits — called via **Supabase Edge Functions** that verify the Clerk JWT, so the key stays server-side.
 > **Legend:** `[x]` done & verified · `[~]` code written, pending live keys/deploy · `[ ]` not started.
 
 ### 🛠 Project Setup
@@ -362,3 +362,33 @@ Use this as your single source of truth as you build. Check items off as they're
 **Total items:** 75 | **Completed:** 57 / 75 · **Phases 1–4 ✅ (core)** · remaining = ops (domain, cross-browser, Lighthouse) + small deferred items
 
 *Tip: Work through phases in order — each phase unlocks the next. Don't skip to analytics before the goal engine works.*
+
+---
+
+## 13. Production Hardening & Scalability Backlog
+
+Reviewed after the feature build. Ranked by priority.
+
+### 🔴 High — do before real users
+- [x] **Secure edge functions** — all 6 now verify the Clerk JWT against Clerk JWKS via `_shared/auth.ts` (returns 401 if invalid). Requires `CLERK_ISSUER` secret.
+- **AI cost controls.** Milestone gen is now a single OpenRouter call. Still add per-user rate limiting / daily cap (needs a usage table + service-role write in the edge function). *Pending.*
+- [x] **Global error boundary** — `ErrorBoundary` wraps the app; friendly recoverable fallback instead of a blank screen.
+
+### 🟡 Medium — matters as data grows
+- [x] **Bound unbounded queries** — `useCalendar` now windows check-ins + habit_logs to the last ~400 days.
+- **Push aggregation into SQL.** Life Score, analytics, and weekly-review pull raw rows to the client and compute in JS. At scale, move to Postgres views / RPC functions (or materialized views). *Pending.*
+- [x] **Single Supabase client** — `useSupabase` returns one shared client with a live `accessToken` getter.
+- **Auto cron jobs.** Weekly review (Sunday) + overdue-milestone sweep via Supabase scheduled functions / pg_cron, instead of on-demand only.
+
+### 🟢 Lower — nice to have
+- `profiles` table is created but never populated (Clerk holds identity) — either use it for preferences or drop it.
+- Optimistic UI for habit toggle + check-ins (currently refetch).
+- Pagination for goals/journal once lists get long.
+- Tests (none yet) — at least smoke tests on hooks + edge functions.
+- True background push (service worker) — current reminders only fire while a tab is open.
+
+### Feature gaps spotted
+- [x] **Delete a goal** (cascade milestones) + **edit milestone** title/description/date — on goal detail.
+- [x] **Global search includes journal entries** (command palette, when searching).
+- **Data export** (JSON / full backup) — listed in future ideas. *Pending.*
+- Habits **active/inactive filter** + **streak summary on dashboard** (deferred earlier). *Pending.*

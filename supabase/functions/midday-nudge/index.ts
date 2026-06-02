@@ -1,8 +1,8 @@
 // @ts-nocheck — Deno runtime (Supabase Edge Function); not type-checked by the app's TS server.
-// Supabase Edge Function: journal-insight
-// Journal entry -> short, warm reflection (plain text) via OpenRouter.
+// Supabase Edge Function: midday-nudge
+// Short (1-2 sentence) practical pep based on the user's mid-day status + remaining focus tasks.
 //
-// Deploy:  npx supabase functions deploy journal-insight --no-verify-jwt
+// Deploy:  npx supabase functions deploy midday-nudge --no-verify-jwt
 import { getUserId } from "../_shared/auth.ts";
 import { callLLM } from "../_shared/llm.ts";
 
@@ -20,21 +20,23 @@ Deno.serve(async (req) => {
     const userId = await getUserId(req);
     if (!userId) return json({ error: "Unauthorized" }, 401);
 
-    const { content, mood } = await req.json();
-    if (!content) return json({ error: "Missing content" }, 400);
+    const { status, remaining = [], doneCount = 0, totalTasks = 0, blocker } = await req.json();
 
     const prompt =
-      `You are NorthStar, a thoughtful journaling companion (mentor + analyst). Read this entry and ` +
-      `respond in 3-4 sentences, second person. Reflect back the core feeling, name ONE pattern or ` +
-      `gentle reframe, end with a small grounding thought or question. Warm, not clinical, no lists.\n\n` +
-      `Self-rated mood: ${mood || "(not given)"}\n` +
-      `Entry:\n${content}`;
+      `You are NorthStar, a brief mid-day coach. The user just did a quick check-in. Reply in ` +
+      `1-2 sentences, second person — practical and energizing, not preachy. If blocked, suggest one ` +
+      `small unblock. If on track, keep it tight and momentum-focused.\n\n` +
+      `Status: ${status}\n` +
+      `Focus tasks done: ${doneCount}/${totalTasks}\n` +
+      `Remaining: ${remaining.length ? remaining.join("; ") : "(none)"}\n` +
+      `Blocker: ${blocker || "(none)"}\n\n` +
+      `Just the 1-2 sentences, no preamble.`;
 
-    const reflection =
+    const nudge =
       (await callLLM({ prompt, temperature: 0.8 })).trim() ||
-      "Thanks for writing this down. Naming it is the first step.";
+      "Keep going — pick the smallest next step and start it.";
 
-    return json({ reflection }, 200);
+    return json({ nudge }, 200);
   } catch (err) {
     return json({ error: String(err) }, 500);
   }

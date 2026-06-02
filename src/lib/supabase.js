@@ -1,23 +1,26 @@
 import { createClient } from '@supabase/supabase-js'
 import { useSession } from '@clerk/clerk-react'
-import { useMemo } from 'react'
 
 const url = import.meta.env.VITE_SUPABASE_URL
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
+// Latest Clerk token getter, updated by useSupabase(). The single client below
+// reads it fresh on every request via the accessToken callback.
+let tokenGetter = async () => null
+
+// One shared client for the whole app (stable identity → stable React Query behavior).
+const client = createClient(url, anonKey, {
+  accessToken: () => tokenGetter(),
+})
+
 /**
- * Supabase client bound to the signed-in Clerk session.
+ * Returns the shared Supabase client, bound to the current Clerk session.
  * Clerk issues the JWT; Supabase RLS reads `auth.jwt()->>'sub'` as the user id.
- * Token is fetched fresh per request via the accessToken callback.
  */
 export function useSupabase() {
   const { session } = useSession()
-
-  return useMemo(() => {
-    return createClient(url, anonKey, {
-      accessToken: async () => (session ? await session.getToken() : null),
-    })
-  }, [session])
+  tokenGetter = async () => (session ? await session.getToken() : null)
+  return client
 }
 
 // Anonymous client for public reads (no auth context). Use sparingly.

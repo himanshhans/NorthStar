@@ -13,6 +13,7 @@ const STATIC = [
   { id: 'midday', label: 'Mid-day nudge', hint: 'Check-in', icon: '◐', to: '/checkin/midday', kw: 'pulse midday' },
   { id: 'evening', label: 'Evening reflection', hint: 'Check-in', icon: '☾', to: '/checkin/evening', kw: 'reflect evening journal' },
   { id: 'journal', label: 'Journal', hint: 'Go to', icon: '✎', to: '/journal', kw: 'journal write notes' },
+  { id: 'focus', label: 'Focus', hint: 'Go to', icon: '🌱', to: '/focus', kw: 'focus timer pomodoro meditate grow' },
   { id: 'calendar', label: 'Calendar', hint: 'Go to', icon: '▤', to: '/calendar', kw: 'calendar month schedule' },
   { id: 'review', label: 'Weekly review', hint: 'Go to', icon: '❧', to: '/review', kw: 'weekly review summary' },
   { id: 'analytics', label: 'Analytics', hint: 'Go to', icon: '📈', to: '/analytics', kw: 'charts trends analytics' },

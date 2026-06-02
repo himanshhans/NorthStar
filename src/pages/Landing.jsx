@@ -11,7 +11,7 @@ const features = [
   { icon: '📈', title: 'Life Score & Analytics', text: 'One composite score across Personal, Career, and Learning, with trends over time.' },
   { icon: '❧', title: 'Weekly Reviews', text: 'An AI deep-dive every week — what happened, the pattern, three adjustments. Export to PDF.' },
   { icon: '🔄', title: 'Catch-up & Journal', text: 'Slipped? AI re-plans missed milestones into smaller steps. Plus a reflective AI journal.' },
-  { icon: '🌱', title: 'Focus & Garden', text: 'Forest-style focus timer: grow a 3D plant as you focus, build a living garden. Leave early and it withers.' },
+  { icon: '🌱', title: 'Focus Worlds', text: 'Focus timer that grows a living 3D world — a forest with wildlife, or a city with traffic. Day/night sky, sun & moon. Leave early and it withers.' },
 ]
 
 export default function Landing() {
@@ -61,7 +61,7 @@ export default function Landing() {
           </section>
 
           <p className="mx-auto mb-24 max-w-2xl px-6 text-center text-sm text-faint">
-            ⌘K command palette · calendar view · 3D focus garden · goal templates · markdown notes · check-in reminders · light & dark · works on mobile
+            ⌘K command palette · calendar view · 3D focus worlds · goal templates · markdown notes · check-in reminders · light & dark · works on mobile
           </p>
 
           <footer className="border-t border-border py-8 text-center text-sm text-faint">

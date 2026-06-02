@@ -31,7 +31,10 @@ Built first for one person, designed to scale to thousands.
 - **Analytics** — Life Score trend, weekly habit completions, check-in heatmap
 - **Calendar** — milestones, check-ins, and habit reps on a month grid
 - **AI journal** — free-form entries with mood + AI reflection
-- **Focus mode** — Forest-style timer: pick a length (presets or custom) and a biome — **grow a garden** (pine, tree, maple, bush, multi-bloom tulip/daisy/rose/lavender) or **build a city** (houses, shops, towers, skyscrapers on a road grid). The element grows/builds live in **procedural low-poly 3D** (react-three-fiber) you can orbit; leave early (or switch tabs in Strict mode) and it withers. Completed sessions fill an orbitable 3D garden grove or cityscape, the scene runs a **day/night** cycle (city windows light up at night), and 60+ min sessions unlock a special **Sakura tree** / **landmark tower**. No external 3D assets.
+- **Focus mode** — Forest-style timer: pick a length (presets or custom) and a biome:
+  - **Forest** — grow trees & flowers (pine, tree, maple, bush, multi-bloom tulip/daisy/rose/lavender) on a living island with **wildlife** (bees, butterflies, hopping rabbits, roaming deer) and **grass that thickens** as your grove grows.
+  - **City** — build houses, shops, towers, skyscrapers, hospitals, schools, power plants, malls, parks & water-treatment plants on a road grid, with **moving cars** that stop at **traffic lights**, **pedestrians**, and **street lamps** that glow at night.
+  - Elements grow/build live in **procedural low-poly 3D** (react-three-fiber) you can orbit; leave early (or switch tabs in Strict mode) and it withers. A **day/night cycle** moves a real **sun & moon** across the sky (stars at night) and drives the lighting; 60+ min sessions unlock a special **Sakura tree / four-leaf clover** (forest) or an iconic **landmark** — Eiffel Tower, Big Ben, Burj Khalifa, Statue of Liberty, pyramid (city). No external 3D assets.
 
 ### Polish
 - Light / dark theme (system default + persistent toggle)

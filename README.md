@@ -31,7 +31,7 @@ Built first for one person, designed to scale to thousands.
 - **Analytics** — Life Score trend, weekly habit completions, check-in heatmap
 - **Calendar** — milestones, check-ins, and habit reps on a month grid
 - **AI journal** — free-form entries with mood + AI reflection
-- **Focus mode** — Forest-style timer: pick a length (presets or custom), grow a random **tree or flowering plant** (pine, leafy tree, bush, multi-bloom tulip & daisy — varied colours & heights) as you focus; leave early (or switch tabs in Strict mode) and it withers. Rendered as **procedural low-poly 3D** (react-three-fiber) you can orbit — the plant grows live, completed sessions build a 3D **garden grove**, and the scene tints with a **day/night** cycle by local time. No external 3D assets.
+- **Focus mode** — Forest-style timer: pick a length (presets or custom) and a biome — **grow a garden** (pine, tree, maple, bush, multi-bloom tulip/daisy/rose/lavender) or **build a city** (houses, shops, towers, skyscrapers on a road grid). The element grows/builds live in **procedural low-poly 3D** (react-three-fiber) you can orbit; leave early (or switch tabs in Strict mode) and it withers. Completed sessions fill an orbitable 3D garden grove or cityscape, the scene runs a **day/night** cycle (city windows light up at night), and 60+ min sessions unlock a special **Sakura tree** / **landmark tower**. No external 3D assets.
 
 ### Polish
 - Light / dark theme (system default + persistent toggle)

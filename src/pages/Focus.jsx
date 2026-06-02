@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { PageTitle, Card, Button } from '../components/ui'
-import { FocusScene, GardenScene } from '../components/three/FocusWorld'
-import { useFocusSessions, useSaveFocusSession, gardenStats, randomElement, elementEmoji } from '../hooks/useFocus'
+import { FocusScene, CollectionScene, isBuilding } from '../components/three/FocusWorld'
+import { useFocusSessions, useSaveFocusSession, gardenStats, elementEmoji, pickElement, SPECIAL_MIN } from '../hooks/useFocus'
 
 const PRESETS = [15, 25, 50, 90]
 const clampMin = (v) => {
@@ -22,6 +22,8 @@ export default function Focus() {
   const [durationMin, setDurationMin] = useState(25)
   const [task, setTask] = useState('')
   const [strict, setStrict] = useState(false)
+  const [mode, setMode] = useState(() => localStorage.getItem('ns-focus-mode') || 'garden') // garden | city
+  const [view, setView] = useState(mode)
   const [element, setElement] = useState('tree')
   const [seed, setSeed] = useState('preview')
   const [elapsed, setElapsed] = useState(0)
@@ -32,8 +34,18 @@ export default function Focus() {
   const progress = phase === 'done' ? 1 : Math.min(1, elapsed / durationSec)
   const remaining = Math.max(0, Math.ceil(durationSec - elapsed))
 
+  const isCity = mode === 'city'
+  const special = isCity
+    ? { emoji: '🗼', verb: 'build a world landmark (Eiffel, Big Ben, Burj…)' }
+    : { emoji: '🌸', verb: 'grow a rare Sakura or four-leaf Clover' }
+  const plantCount = stats.completed.filter((s) => !isBuilding(s.element)).length
+  const cityCount = stats.completed.filter((s) => isBuilding(s.element)).length
+  const viewCount = view === 'city' ? cityCount : plantCount
+
+  const chooseMode = (m) => { setMode(m); setView(m); localStorage.setItem('ns-focus-mode', m) }
+
   function start() {
-    setElement(randomElement())
+    setElement(pickElement(mode, durationMin))
     setSeed(Math.random().toString(36).slice(2))
     setElapsed(0)
     startRef.current = Date.now()
@@ -92,7 +104,19 @@ export default function Focus() {
       <Card className="mb-8 flex flex-col items-center gap-6 py-10">
         {phase === 'idle' && (
           <div className="w-full max-w-md space-y-5 text-center">
-            <FocusScene type="tree" progress={0.6} dead={false} seed="preview" />
+            <FocusScene type={isCity ? 'tower' : 'tree'} progress={0.6} dead={false} seed="preview" world={mode} />
+
+            <div className="inline-flex rounded-lg border border-border p-0.5 text-sm">
+              <button
+                onClick={() => chooseMode('garden')}
+                className={`rounded-md px-4 py-1.5 ${!isCity ? 'bg-accent text-accent-fg' : 'text-muted'}`}
+              >🌳 Forest</button>
+              <button
+                onClick={() => chooseMode('city')}
+                className={`rounded-md px-4 py-1.5 ${isCity ? 'bg-accent text-accent-fg' : 'text-muted'}`}
+              >🏙 City</button>
+            </div>
+
             <div>
               <p className="mb-2 text-sm text-muted">Focus length</p>
               <div className="flex flex-wrap items-center justify-center gap-2">
@@ -133,13 +157,17 @@ export default function Focus() {
               <input type="checkbox" className="h-4 w-4 accent-accent" checked={strict} onChange={(e) => setStrict(e.target.checked)} />
               Strict mode — leaving the tab kills it
             </label>
-            <Button onClick={start} className="px-8 py-3 text-base">Plant & focus</Button>
+            <p className={`text-xs ${durationMin >= SPECIAL_MIN ? 'text-accent' : 'text-faint'}`}>
+              {special.emoji} Focus {SPECIAL_MIN}+ min to {special.verb}
+              {durationMin >= SPECIAL_MIN ? ' — unlocked!' : ''}
+            </p>
+            <Button onClick={start} className="px-8 py-3 text-base">{isCity ? 'Build & focus' : 'Plant & focus'}</Button>
           </div>
         )}
 
         {phase === 'running' && (
           <div className="flex w-full flex-col items-center gap-5 text-center">
-            <FocusScene type={element} progress={progress} dead={false} seed={seed} />
+            <FocusScene type={element} progress={progress} dead={false} seed={seed} world={mode} />
             <p className="font-display text-5xl font-semibold tabular-nums">{fmt(remaining)}</p>
             {task && <p className="text-sm text-muted">“{task}”</p>}
             <p className="text-xs text-faint">{strict ? '⚠ Strict: don’t leave this tab' : 'Stay focused'}</p>
@@ -149,16 +177,16 @@ export default function Focus() {
 
         {phase === 'done' && (
           <div className="flex w-full flex-col items-center gap-4 text-center">
-            <FocusScene type={element} progress={1} dead={false} seed={seed} />
-            <p className="font-display text-2xl">{elementEmoji[element]} It grew!</p>
-            <p className="text-sm text-muted">{durationMin} minutes focused. Added to your garden below.</p>
+            <FocusScene type={element} progress={1} dead={false} seed={seed} world={mode} />
+            <p className="font-display text-2xl">{elementEmoji[element]} {isCity ? 'It’s built!' : 'It grew!'}</p>
+            <p className="text-sm text-muted">{durationMin} minutes focused. Added to your {isCity ? 'city' : 'forest'} below.</p>
             <Button onClick={() => setPhase('idle')}>Focus again</Button>
           </div>
         )}
 
         {phase === 'failed' && (
           <div className="flex w-full flex-col items-center gap-4 text-center">
-            <FocusScene type={element} progress={progress} dead seed={seed} />
+            <FocusScene type={element} progress={progress} dead seed={seed} world={mode} />
             <p className="font-display text-2xl text-danger">It withered.</p>
             <p className="text-sm text-muted">You left before the timer finished. No shame — try a shorter session.</p>
             <Button onClick={() => setPhase('idle')}>Try again</Button>
@@ -166,16 +194,24 @@ export default function Focus() {
         )}
       </Card>
 
-      {/* garden */}
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-display text-xl">Your garden</h2>
-        {stats.completed.length > 0 && <span className="text-xs text-faint">drag to orbit</span>}
+      {/* collection: garden or city */}
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="font-display text-xl">Your {view === 'city' ? 'city' : 'forest'}</h2>
+        <div className="flex items-center gap-3">
+          <div className="inline-flex rounded-lg border border-border p-0.5 text-xs">
+            <button onClick={() => setView('garden')} className={`rounded px-2.5 py-1 ${view !== 'city' ? 'bg-surface2 text-fg' : 'text-muted'}`}>🌳 Forest</button>
+            <button onClick={() => setView('city')} className={`rounded px-2.5 py-1 ${view === 'city' ? 'bg-surface2 text-fg' : 'text-muted'}`}>🏙 City</button>
+          </div>
+          {viewCount > 0 && <span className="text-xs text-faint">drag to orbit</span>}
+        </div>
       </div>
-      {stats.completed.length === 0 ? (
-        <p className="text-sm text-faint">Empty for now. Finish a focus session to grow your first one.</p>
+      {viewCount === 0 ? (
+        <p className="text-sm text-faint">
+          Empty for now. Finish a {view === 'city' ? 'City' : 'Forest'} session to {view === 'city' ? 'build your first structure' : 'grow your first plant'}.
+        </p>
       ) : (
         <Card className="overflow-hidden p-0">
-          <GardenScene items={stats.completed} />
+          <CollectionScene items={stats.completed} world={view} />
         </Card>
       )}
     </>

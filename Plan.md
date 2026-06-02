@@ -237,6 +237,7 @@ ai_insights (text), score_snapshot (JSON), created_at
 - **Goal templates** — one-tap starters in the wizard
 - **PDF export** — weekly review → print-to-PDF (`exportPdf.js`)
 - **Browser reminders** — check-in notifications + settings (`ReminderManager.jsx`)
+- **Focus mode** — Forest-style focus timer growing a random element + living 3D garden city; **procedural low-poly 3D** (react-three-fiber), orbitable, theme-colored; Strict tab-guard (`Focus.jsx`, `components/three/FocusWorld.jsx`, `0005_focus_sessions.sql`)
 
 ### Still future
 - **Accountability partner mode:** Share a goal with a friend, see each other's progress

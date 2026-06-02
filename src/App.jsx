@@ -18,6 +18,7 @@ const Analytics = lazy(() => import('./pages/Analytics'))
 const Settings = lazy(() => import('./pages/Settings'))
 const Calendar = lazy(() => import('./pages/Calendar'))
 const Journal = lazy(() => import('./pages/Journal'))
+const Focus = lazy(() => import('./pages/Focus'))
 
 const Loading = () => (
   <div className="grid min-h-[40vh] place-items-center text-faint">
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/habits" element={<Habits />} />
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/journal" element={<Journal />} />
+          <Route path="/focus" element={<Focus />} />
           <Route path="/checkin/morning" element={<CheckinMorning />} />
           <Route path="/checkin/midday" element={<CheckinMidday />} />
           <Route path="/checkin/evening" element={<CheckinEvening />} />

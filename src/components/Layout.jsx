@@ -11,6 +11,7 @@ const nav = [
   { to: '/dashboard', label: 'Dashboard', icon: '◎' },
   { to: '/goals', label: 'Goals', icon: '◆' },
   { to: '/habits', label: 'Habits', icon: '▦' },
+  { to: '/focus', label: 'Focus', icon: '🌱' },
   { to: '/calendar', label: 'Calendar', icon: '▤' },
   { to: '/journal', label: 'Journal', icon: '✎' },
   { to: '/review', label: 'Weekly Review', icon: '❧' },
@@ -48,16 +49,16 @@ function NavItem({ item, onNavigate }) {
 function NavList({ onNavigate }) {
   return (
     <nav className="flex flex-1 flex-col gap-1">
-      {nav.slice(0, 4).map((item) => <NavItem key={item.to} item={item} onNavigate={onNavigate} />)}
+      {nav.slice(0, 5).map((item) => <NavItem key={item.to} item={item} onNavigate={onNavigate} />)}
 
       <p className="mt-3 px-3 pb-1 text-[10px] font-medium uppercase tracking-wider text-faint">Check-in</p>
       {checkinNav.map((item) => <NavItem key={item.to} item={item} onNavigate={onNavigate} />)}
 
       <p className="mt-3 px-3 pb-1 text-[10px] font-medium uppercase tracking-wider text-faint">Insights</p>
-      {nav.slice(4, 7).map((item) => <NavItem key={item.to} item={item} onNavigate={onNavigate} />)}
+      {nav.slice(5, 8).map((item) => <NavItem key={item.to} item={item} onNavigate={onNavigate} />)}
 
       <div className="mt-3 border-t border-border pt-3">
-        <NavItem item={nav[7]} onNavigate={onNavigate} />
+        <NavItem item={nav[8]} onNavigate={onNavigate} />
       </div>
     </nav>
   )

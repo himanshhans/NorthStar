@@ -85,3 +85,10 @@ button, a, [role="button"] { -webkit-tap-highlight-color: transparent; }
 .prose-notes code { background: var(--color-surface2); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
 .prose-notes blockquote { border-left: 3px solid var(--color-border); padding-left: 0.8em; color: var(--color-muted); margin: 0.5em 0; }
 .prose-notes strong { font-weight: 700; }
+
+/* Garden idle sway for focus elements */
+@keyframes ns-sway {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-5px) rotate(2deg); }
+}
+.ns-sway { animation: ns-sway 4s ease-in-out infinite; }

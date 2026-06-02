@@ -31,7 +31,7 @@ Built first for one person, designed to scale to thousands.
 - **Analytics** — Life Score trend, weekly habit completions, check-in heatmap
 - **Calendar** — milestones, check-ins, and habit reps on a month grid
 - **AI journal** — free-form entries with mood + AI reflection
-- **Focus mode** — Forest-style timer: pick a length (presets or custom), grow a random **tree or flower** (pine, leafy tree, bush, tulip, daisy — varied colors & heights) as you focus; leave early (or switch tabs in Strict mode) and it withers. Rendered as **procedural low-poly 3D** (react-three-fiber) you can orbit — the plant grows live, completed sessions build a 3D **garden grove**, and the scene tints with a **day/night** cycle by local time. No external 3D assets.
+- **Focus mode** — Forest-style timer: pick a length (presets or custom), grow a random **tree or flowering plant** (pine, leafy tree, bush, multi-bloom tulip & daisy — varied colours & heights) as you focus; leave early (or switch tabs in Strict mode) and it withers. Rendered as **procedural low-poly 3D** (react-three-fiber) you can orbit — the plant grows live, completed sessions build a 3D **garden grove**, and the scene tints with a **day/night** cycle by local time. No external 3D assets.
 
 ### Polish
 - Light / dark theme (system default + persistent toggle)
@@ -133,11 +133,12 @@ npm run dev
 ```
 src/
   components/   # Layout, UI primitives, Logo, Heatmap, CommandPalette,
-                # MilestoneBoard, Onboarding, ReminderManager, ThemeToggle …
+                # MilestoneBoard, Onboarding, ReminderManager, ErrorBoundary,
+                # ThemeToggle, three/FocusWorld (3D focus garden) …
   pages/        # Dashboard, Goals, GoalNew, GoalDetail, Habits, Calendar,
-                # Journal, Review, Analytics, Settings, check-ins, Landing, Login
-  hooks/        # useGoals, useHabits, useCheckins, useLifeScore,
-                # useWeeklyReview, useAnalytics, useCalendar, useJournal
+                # Journal, Review, Analytics, Focus, Settings, check-ins, Landing, Login
+  hooks/        # useGoals, useHabits, useCheckins, useLifeScore, useWeeklyReview,
+                # useAnalytics, useCalendar, useJournal, useFocus
   lib/          # supabase, theme, reminders, markdown, queryClient, exportPdf
 supabase/
   migrations/   # SQL schema + RLS

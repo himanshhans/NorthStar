@@ -1,7 +1,7 @@
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { PageTitle, Card, EmptyState } from '../components/ui'
+import { PageTitle, Card, EmptyState, ErrorState } from '../components/ui'
 import Heatmap from '../components/Heatmap'
 import { useAnalytics } from '../hooks/useAnalytics'
 
@@ -27,8 +27,9 @@ const tooltipStyle = {
 }
 
 export default function Analytics() {
-  const { data, isLoading } = useAnalytics()
+  const { data, isLoading, isError, refetch } = useAnalytics()
 
+  if (isError) return (<><PageTitle title="Analytics" /><ErrorState title="Couldn’t load analytics" onRetry={refetch} /></>)
   if (isLoading) return (<><PageTitle title="Analytics" /><p className="text-faint">Loading…</p></>)
 
   const { lifeHistory = [], habitWeekly = [], checkinCounts = {} } = data || {}

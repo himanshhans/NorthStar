@@ -1,6 +1,6 @@
 import { useUser } from '@clerk/clerk-react'
 import { Link } from 'react-router-dom'
-import { Card, Button, ProgressBar, Skeleton } from '../components/ui'
+import { Card, Button, ProgressBar, Skeleton, ErrorState } from '../components/ui'
 import GreetingBanner from '../components/GreetingBanner'
 import { quoteOfDay } from '../lib/quotes'
 import { useGoals } from '../hooks/useGoals'
@@ -14,7 +14,7 @@ export default function Dashboard() {
   const { user } = useUser()
   const name = user?.firstName || 'there'
 
-  const { data: goals = [], isLoading } = useGoals({ status: 'Active' })
+  const { data: goals = [], isLoading, isError, refetch } = useGoals({ status: 'Active' })
   const { data: morning } = useTodayCheckin('morning')
   const { data: todayEvents = [] } = useTodayEvents()
   const focusTasks = morning?.content?.tasks || []
@@ -121,7 +121,9 @@ export default function Dashboard() {
       )}
 
       <h2 className="mb-3 mt-8 font-display text-xl">Active goals</h2>
-      {isLoading ? (
+      {isError ? (
+        <ErrorState title="Couldn’t load your goals" onRetry={refetch} />
+      ) : isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2">
           <Skeleton className="h-24" />
           <Skeleton className="h-24" />

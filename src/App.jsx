@@ -2,23 +2,38 @@ import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
+import Toaster from './components/Toaster'
+import OfflineBanner from './components/OfflineBanner'
+import SlowIndicator from './components/SlowIndicator'
+import { ErrorState } from './components/ui'
 
-const Landing = lazy(() => import('./pages/Landing'))
-const Login = lazy(() => import('./pages/Login'))
-const Dashboard = lazy(() => import('./pages/Dashboard'))
-const Goals = lazy(() => import('./pages/Goals'))
-const GoalNew = lazy(() => import('./pages/GoalNew'))
-const GoalDetail = lazy(() => import('./pages/GoalDetail'))
-const Habits = lazy(() => import('./pages/Habits'))
-const CheckinEvening = lazy(() => import('./pages/CheckinEvening'))
-const CheckinMorning = lazy(() => import('./pages/CheckinMorning'))
-const CheckinMidday = lazy(() => import('./pages/CheckinMidday'))
-const Review = lazy(() => import('./pages/Review'))
-const Analytics = lazy(() => import('./pages/Analytics'))
-const Settings = lazy(() => import('./pages/Settings'))
-const Calendar = lazy(() => import('./pages/Calendar'))
-const Journal = lazy(() => import('./pages/Journal'))
-const Focus = lazy(() => import('./pages/Focus'))
+// Shown when a route's JS chunk can't be fetched (e.g. navigating while offline).
+function RouteLoadError() {
+  return (
+    <div className="mx-auto max-w-md py-10">
+      <ErrorState title="Couldn’t load this page" onRetry={() => window.location.reload()} />
+    </div>
+  )
+}
+// Lazy import that degrades to a friendly retry screen instead of crashing the app.
+const lazyRoute = (factory) => lazy(() => factory().catch(() => ({ default: RouteLoadError })))
+
+const Landing = lazyRoute(() => import('./pages/Landing'))
+const Login = lazyRoute(() => import('./pages/Login'))
+const Dashboard = lazyRoute(() => import('./pages/Dashboard'))
+const Goals = lazyRoute(() => import('./pages/Goals'))
+const GoalNew = lazyRoute(() => import('./pages/GoalNew'))
+const GoalDetail = lazyRoute(() => import('./pages/GoalDetail'))
+const Habits = lazyRoute(() => import('./pages/Habits'))
+const CheckinEvening = lazyRoute(() => import('./pages/CheckinEvening'))
+const CheckinMorning = lazyRoute(() => import('./pages/CheckinMorning'))
+const CheckinMidday = lazyRoute(() => import('./pages/CheckinMidday'))
+const Review = lazyRoute(() => import('./pages/Review'))
+const Analytics = lazyRoute(() => import('./pages/Analytics'))
+const Settings = lazyRoute(() => import('./pages/Settings'))
+const Calendar = lazyRoute(() => import('./pages/Calendar'))
+const Journal = lazyRoute(() => import('./pages/Journal'))
+const Focus = lazyRoute(() => import('./pages/Focus'))
 
 const Loading = () => (
   <div className="grid min-h-[40vh] place-items-center text-faint">
@@ -28,8 +43,10 @@ const Loading = () => (
 
 export default function App() {
   return (
-    <Suspense fallback={<Loading />}>
-      <Routes>
+    <>
+      <OfflineBanner />
+      <Suspense fallback={<Loading />}>
+        <Routes>
         {/* Public */}
         <Route path="/" element={<Landing />} />
         <Route path="/login/*" element={<Login />} />
@@ -60,7 +77,10 @@ export default function App() {
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Suspense>
+        </Routes>
+      </Suspense>
+      <Toaster />
+      <SlowIndicator />
+    </>
   )
 }

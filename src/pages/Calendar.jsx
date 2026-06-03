@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { PageTitle, Card, Button } from '../components/ui'
+import { PageTitle, Card, Button, ErrorState } from '../components/ui'
 import { useCalendar, useAddEvent, useUpdateEvent, useDeleteEvent } from '../hooks/useCalendar'
 
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -12,7 +12,7 @@ const fmtLong = (key) =>
   new Date(key + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
 
 export default function Calendar() {
-  const { data, isLoading } = useCalendar()
+  const { data, isLoading, isError, refetch } = useCalendar()
   const [cursor, setCursor] = useState(() => {
     const d = new Date()
     return new Date(d.getFullYear(), d.getMonth(), 1)
@@ -50,11 +50,13 @@ export default function Calendar() {
 
       <p className="mb-3 font-display text-lg">{monthName}</p>
 
-      {isLoading ? (
+      {isError ? (
+        <ErrorState title="Couldn’t load your calendar" onRetry={refetch} />
+      ) : isLoading ? (
         <p className="text-faint">Loading…</p>
       ) : (
         <Card className="overflow-x-auto p-3">
-          <div className="grid min-w-[640px] grid-cols-7 gap-1">
+          <div className="grid min-w-160 grid-cols-7 gap-1">
             {DOW.map((d) => (
               <div key={d} className="px-2 py-1 text-xs font-medium text-faint">{d}</div>
             ))}

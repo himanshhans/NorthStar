@@ -2,12 +2,12 @@ import { Link } from 'react-router-dom'
 
 export function PageTitle({ title, subtitle, action }) {
   return (
-    <div className="mb-8 flex items-end justify-between gap-4">
-      <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight text-fg">{title}</h1>
+    <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+      <div className="min-w-0">
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-fg sm:text-3xl">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
       </div>
-      {action}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   )
 }
@@ -59,6 +59,20 @@ export function EmptyState({ icon = '✦', title, hint, action }) {
 
 export function Skeleton({ className = '' }) {
   return <div className={`animate-pulse rounded-md bg-surface2 ${className}`} />
+}
+
+export function ErrorState({ title = 'Couldn’t load this', onRetry }) {
+  const online = typeof navigator === 'undefined' ? true : navigator.onLine
+  return (
+    <Card className="flex flex-col items-center gap-3 py-12 text-center">
+      <span className="text-3xl">⚠️</span>
+      <p className="font-display text-lg text-fg">{title}</p>
+      <p className="max-w-sm text-sm text-muted">
+        {online ? 'The server didn’t respond. Check your connection and try again.' : 'You appear to be offline.'}
+      </p>
+      {onRetry && <Button onClick={onRetry} className="mt-1">Retry</Button>}
+    </Card>
+  )
 }
 
 export function Placeholder({ title, note }) {

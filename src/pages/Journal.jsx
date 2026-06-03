@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { PageTitle, Card, Button, EmptyState } from '../components/ui'
+import { PageTitle, Card, Button, EmptyState, ErrorState } from '../components/ui'
 import { useJournalEntries, useAddJournalEntry } from '../hooks/useJournal'
 
 const MOODS = [
@@ -14,7 +14,7 @@ const fmt = (d) =>
   new Date(d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
 
 export default function Journal() {
-  const { data: entries = [], isLoading } = useJournalEntries()
+  const { data: entries = [], isLoading, isError, refetch } = useJournalEntries()
   const add = useAddJournalEntry()
 
   const [content, setContent] = useState('')
@@ -59,7 +59,9 @@ export default function Journal() {
         </div>
       </Card>
 
-      {isLoading ? (
+      {isError ? (
+        <ErrorState title="Couldn’t load your journal" onRetry={refetch} />
+      ) : isLoading ? (
         <p className="text-faint">Loading…</p>
       ) : entries.length === 0 ? (
         <EmptyState icon="✎" title="No entries yet" hint="Your first journal entry will appear here." />

@@ -73,7 +73,7 @@ export default function GreetingBanner({ name, action }) {
         <Sky phase={phase} />
       </div>
 
-      <div className="relative flex items-center justify-between gap-4 px-6 py-7">
+      <div className="relative flex flex-col items-start gap-3 px-5 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-7">
         <div>
           <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
             {GREET[phase]}, {name}

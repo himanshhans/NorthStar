@@ -2,6 +2,50 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSupabase } from '../lib/supabase'
 
 const todayStr = () => new Date().toISOString().slice(0, 10)
+const yesterdayStr = () => {
+  const d = new Date()
+  d.setDate(d.getDate() - 1)
+  return d.toISOString().slice(0, 10)
+}
+
+/** Yesterday's evening reflection content (or null) — context for the morning chat. */
+export function useYesterdayEvening() {
+  const sb = useSupabase()
+  return useQuery({
+    queryKey: ['checkin', 'evening', yesterdayStr()],
+    queryFn: async () => {
+      const { data, error } = await sb
+        .from('checkins')
+        .select('content')
+        .eq('type', 'evening')
+        .eq('date', yesterdayStr())
+        .order('created_at', { ascending: false })
+        .limit(1)
+      if (error) throw error
+      return data?.[0]?.content ?? null
+    },
+  })
+}
+
+/** Morning "chat with a friend" — friendly reply + suggested focus tasks. */
+export function useMorningChat() {
+  const sb = useSupabase()
+  return useMutation({
+    mutationFn: async (body) => {
+      const { data, error } = await sb.functions.invoke('morning-chat', { body })
+      if (error) {
+        let msg = error.message
+        try {
+          const b = await error.context?.json()
+          msg = [b?.error, b?.detail].filter(Boolean).join(' — ') || msg
+        } catch { /* */ }
+        throw new Error(msg)
+      }
+      if (data?.error) throw new Error(data.error)
+      return { reply: data.reply ?? '', tasks: data.tasks ?? [] }
+    },
+  })
+}
 
 /** Latest check-in of a given type for today (or null). */
 export function useTodayCheckin(type) {

@@ -11,7 +11,7 @@ const GREENS = ['#2b8a3e', '#2f9e44', '#37b24d', '#40c057', '#51cf66', '#66a80f'
 const BLOOMS = ['#f43f5e', '#fb7185', '#f59e0b', '#fbbf24', '#a855f7', '#c084fc', '#38bdf8', '#f9a8d4', '#ffffff']
 const AUTUMN = ['#e8590c', '#f76707', '#f08c00', '#e67700', '#d9480f', '#fab005'] // maple foliage
 const SAKURA = ['#f9a8d4', '#fbc4d4', '#fda4af', '#f4a6c0', '#ffd6e8']           // cherry blossom
-const ROSE = ['#e11d48', '#f43f5e', '#fb7185', '#be123c', '#fda4af']             // rose blooms
+const ROSE = ['#c1121f', '#d00000', '#9d0208', '#e5383b', '#b00020']             // red roses
 const PURPLE = ['#7c3aed', '#8b5cf6', '#a855f7', '#9333ea', '#c084fc']           // lavender
 
 // deterministic per-plant variation from a seed string
@@ -255,16 +255,34 @@ function Building({ type, growth = 1, dead = false, seed = 'x', night = false })
     )
   }
   if (type === 'eiffel') {
+    const iron = dead ? grey : '#6b4f33'
+    // square tapering tiers + platforms + four base arches — recognizable, no spike
+    const tier = (rT, rB, h, y) => (
+      <mesh position={[0, y, 0]} castShadow><cylinderGeometry args={[rT, rB, h, 4]} /><meshStandardMaterial color={iron} flatShading /></mesh>
+    )
+    const platform = (w, y) => (
+      <mesh position={[0, y, 0]} castShadow><boxGeometry args={[w, 0.04, w]} /><meshStandardMaterial color={iron} flatShading /></mesh>
+    )
     return (
-      <group scale={[1, g, 1]}>
-        <mesh position={[0, 0.9, 0]} castShadow>
-          <coneGeometry args={[0.5, 1.8, 4, 1, true]} />
-          <meshStandardMaterial color={dead ? grey : '#7a5a3c'} wireframe />
-        </mesh>
-        {[0.55, 1.05].map((py, i) => (
-          <mesh key={i} position={[0, py, 0]}><boxGeometry args={[0.46 - i * 0.18, 0.04, 0.46 - i * 0.18]} /><meshStandardMaterial color={dead ? grey : '#6b4f32'} flatShading /></mesh>
+      <group scale={[1, g, 1]} rotation={[0, Math.PI / 4, 0]}>
+        {/* base section (wide, legs) + four arches between the legs */}
+        {tier(0.26, 0.52, 0.6, 0.3)}
+        {[0, 1, 2, 3].map((i) => (
+          <mesh key={i} position={[0, 0.12, 0]} rotation={[0, (i * Math.PI) / 2, 0]} castShadow>
+            <torusGeometry args={[0.34, 0.035, 6, 14, Math.PI]} />
+            <meshStandardMaterial color={iron} flatShading />
+          </mesh>
         ))}
-        <mesh position={[0, 1.88, 0]}><cylinderGeometry args={[0.008, 0.02, 0.3, 6]} /><meshStandardMaterial color={dead ? grey : '#6b4f32'} /></mesh>
+        {platform(0.62, 0.62)}
+        {/* mid */}
+        {tier(0.13, 0.25, 0.5, 0.89)}
+        {platform(0.3, 1.16)}
+        {/* upper — gentle, near-straight (no sharp point) */}
+        {tier(0.06, 0.12, 0.5, 1.43)}
+        {tier(0.03, 0.06, 0.16, 1.76)}
+        {/* antenna + beacon */}
+        <mesh position={[0, 1.95, 0]}><cylinderGeometry args={[0.006, 0.018, 0.28, 6]} /><meshStandardMaterial color={iron} /></mesh>
+        <mesh position={[0, 2.11, 0]}><sphereGeometry args={[0.02, 6, 6]} /><meshStandardMaterial color="#f43f5e" emissive="#f43f5e" emissiveIntensity={1.2} /></mesh>
       </group>
     )
   }
@@ -436,12 +454,12 @@ function useSky() {
     else if (h < 19.5) base = { sky: '#e8916a', sun: '#ffb27a', sunI: 0.9, amb: 0.6 }            // dusk
     else base = { sky: '#3a3360', sun: '#8a7fc0', sunI: 0.55, amb: 0.5 }                          // evening
 
-    // sun up 6→18, moon otherwise; both arc east→west across the sky
+    // sun up 6→18, moon otherwise; both arc east→west across the visible sky
     const isSun = h >= 6 && h < 18
     const frac = isSun ? (h - 6) / 12 : h < 6 ? (h + 6) / 12 : (h - 18) / 12
     const ang = frac * Math.PI
-    const bodyPos = [-Math.cos(ang) * 16, Math.sin(ang) * 12 + 0.5, -6]
-    return { ...base, isSun, bodyPos, bodyColor: isSun ? '#ffe6a0' : '#e6ecf7', bodyR: isSun ? 1.2 : 0.85 }
+    const bodyPos = [-Math.cos(ang) * 7, Math.sin(ang) * 5.5 + 2, -8]
+    return { ...base, isSun, bodyPos, bodyColor: isSun ? '#ffe6a0' : '#e6ecf7', bodyR: isSun ? 1.3 : 1.0 }
   }, [])
 }
 

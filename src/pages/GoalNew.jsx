@@ -76,14 +76,14 @@ export default function GoalNew() {
   }
 
   return (
-    <>
+    <div className="mx-auto max-w-2xl">
       <PageTitle
         title="New goal"
         subtitle={step === 1 ? 'Describe it. AI breaks it down.' : 'Review your milestones, then save.'}
       />
 
       {step === 1 && (
-        <Card className="max-w-2xl">
+        <Card>
           <div className="space-y-4">
             <div>
               <label className="mb-2 block text-sm text-muted">Start from a template (optional)</label>
@@ -179,7 +179,7 @@ export default function GoalNew() {
       )}
 
       {step === 2 && (
-        <div className="max-w-2xl space-y-4">
+        <div className="space-y-4">
           {feasibility && <FeasibilityBanner f={feasibility} />}
           {milestones.map((m, i) => (
             <Card key={i}>
@@ -230,7 +230,7 @@ export default function GoalNew() {
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }
 

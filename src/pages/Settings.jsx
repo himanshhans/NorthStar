@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { UserProfile } from '@clerk/clerk-react'
 import { PageTitle, Card, Button } from '../components/ui'
 import { useReminders, SLOTS, notificationPermission } from '../lib/reminders'
@@ -6,11 +7,16 @@ export default function Settings() {
   const prefs = useReminders((s) => s.prefs)
   const save = useReminders((s) => s.save)
   const requestPermission = useReminders((s) => s.requestPermission)
-  const perm = notificationPermission()
+  // local so it updates immediately after the browser prompt resolves
+  const [perm, setPerm] = useState(notificationPermission())
 
   async function enable() {
     const res = await requestPermission()
-    if (res === 'granted') save({ enabled: true })
+    setPerm(notificationPermission())
+    if (res === 'granted') {
+      save({ enabled: true })
+      try { new Notification('NorthStar', { body: 'Reminders are on ✓', icon: '/star.svg' }) } catch { /* */ }
+    }
   }
 
   return (

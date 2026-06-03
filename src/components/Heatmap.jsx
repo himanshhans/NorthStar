@@ -10,14 +10,13 @@ function todayUTC() {
   return new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate()))
 }
 
-function level(count, max) {
-  if (!count) return 0
-  if (max <= 1) return 4
-  const r = count / max
-  if (r > 0.75) return 4
-  if (r > 0.5) return 3
-  if (r > 0.25) return 2
-  return 1
+// absolute buckets so 1 rep = light, more-per-day = darker (not relative to your max)
+function level(count) {
+  if (count >= 5) return 4
+  if (count >= 3) return 3
+  if (count >= 2) return 2
+  if (count >= 1) return 1
+  return 0
 }
 const bg = (lvl) =>
   lvl === 0
@@ -28,8 +27,6 @@ export default function Heatmap({ counts = {}, weeks = 26 }) {
   const today = todayUTC()
   const start = new Date(today.getTime() - (weeks * 7 - 1) * DAY_MS)
   start.setUTCDate(start.getUTCDate() - start.getUTCDay()) // snap to Sunday
-
-  const max = Math.max(1, ...Object.values(counts))
 
   const cols = []
   let cursor = new Date(start)
@@ -79,7 +76,7 @@ export default function Heatmap({ counts = {}, weeks = 26 }) {
                     key={cell.k}
                     title={`${cell.k}: ${cell.count} completion${cell.count === 1 ? '' : 's'}`}
                     className="aspect-square w-full rounded-xs"
-                    style={{ backgroundColor: bg(level(cell.count, max)) }}
+                    style={{ backgroundColor: bg(level(cell.count)) }}
                   />
                 ) : (
                   <div key={ri} className="aspect-square w-full" />

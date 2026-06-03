@@ -51,7 +51,7 @@ export default function Analytics() {
             <p className="mb-4 text-sm text-muted">Life Score over time</p>
             {lifeHistory.length < 2 ? (
               <p className="py-8 text-center text-sm text-faint">
-                Need ≥2 weekly reviews to plot a trend. Generate one each week.
+                Your Life Score trend builds up daily — check back after a couple of days of use.
               </p>
             ) : (
               <ResponsiveContainer width="100%" height={220}>

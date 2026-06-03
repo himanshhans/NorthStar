@@ -19,7 +19,7 @@ Built first for one person, designed to scale to thousands.
 - Per-goal **markdown notes**
 
 ### Daily system
-- **Morning intention** — 1–3 focus tasks tied to active goals (feeds the dashboard)
+- **Morning intention** — a warm **AI chat with a friend** that greets you (nodding to yesterday's reflection), suggests 1–3 focus tasks tied to your goals, refines them as you chat, and saves them to the dashboard
 - **Mid-day nudge** — pulse check tied to today's focus tasks (tick what's done) + a short AI nudge
 - **Evening reflection** — guided prompts + free text, with honest AI coaching feedback
 
@@ -29,15 +29,20 @@ Built first for one person, designed to scale to thousands.
 - **Weekly deep-dive review** — AI summary, one pattern, three concrete adjustments; exportable to PDF
 - **Recovery / catch-up** — detects overdue milestones, reschedules, and breaks a missed milestone into smaller steps via AI
 - **Analytics** — Life Score trend, weekly habit completions, check-in heatmap
-- **Calendar** — milestones, check-ins, and habit reps on a month grid
+- **Calendar** — milestones, check-ins, and habit reps on a month grid; **click any day to add timed or multi-day events**, which surface on the dashboard "Today" list and fire **browser reminders at their time**
 - **AI journal** — free-form entries with mood + AI reflection
-- **Focus mode** — Forest-style timer: pick a length (presets or custom), grow a random **tree or flowering plant** (pine, leafy tree, bush, multi-bloom tulip & daisy — varied colours & heights) as you focus; leave early (or switch tabs in Strict mode) and it withers. Rendered as **procedural low-poly 3D** (react-three-fiber) you can orbit — the plant grows live, completed sessions build a 3D **garden grove**, and the scene tints with a **day/night** cycle by local time. No external 3D assets.
+- **Focus mode** — Forest-style timer: pick a length (presets or custom) and a biome:
+  - **Forest** — grow trees & flowers (pine, tree, maple, bush, multi-bloom tulip/daisy/rose/lavender) on a living island with **wildlife** (bees, butterflies, hopping rabbits, roaming deer) and **grass that thickens** as your grove grows.
+  - **City** — build houses, shops, towers, skyscrapers, hospitals, schools, power plants, malls, parks & water-treatment plants on a road grid, with **moving cars** that stop at **traffic lights**, **pedestrians**, and **street lamps** that glow at night.
+  - Elements grow/build live in **procedural low-poly 3D** (react-three-fiber) you can orbit; leave early (or switch tabs in Strict mode) and it withers. A **day/night cycle** moves a real **sun & moon** across the sky (stars at night) and drives the lighting; 60+ min sessions unlock a special **Sakura tree / four-leaf clover** (forest) or an iconic **landmark** — Eiffel Tower, Big Ben, Burj Khalifa, Statue of Liberty, pyramid (city). No external 3D assets.
 
 ### Polish
+- **Time-of-day greeting banner** (sun/clouds by day, moon/stars at night) + a **daily motivational quote**
 - Light / dark theme (system default + persistent toggle)
 - Command palette (**⌘K / Ctrl+K**) with global search across goals, habits & journal
-- Browser check-in reminders; grouped check-in nav
+- Browser check-in **and event reminders**; grouped check-in nav
 - First-run onboarding, loading skeletons, empty states, keyboard focus styles
+- **Resilient error handling** — offline banner + "back online" toast, automatic query retries with backoff, friendly error toasts on failed saves, per-page retry states, a "still working…" slow-network hint, and graceful route-load fallbacks
 - Global error boundary (recoverable fallback instead of a blank screen)
 - Fully responsive (mobile drawer nav)
 
@@ -91,6 +96,9 @@ Run the migrations in order in the Supabase **SQL Editor**:
 3. `supabase/migrations/0003_goal_tips.sql` — cached AI tips per goal
 4. `supabase/migrations/0004_goal_commitment.sql` — time commitment per goal
 5. `supabase/migrations/0005_focus_sessions.sql` — focus sessions / garden
+6. `supabase/migrations/0006_life_score.sql` — milestone `completed_at` + daily Life Score snapshots
+7. `supabase/migrations/0007_events.sql` — calendar events
+8. `supabase/migrations/0008_event_enddate.sql` — multi-day events
 
 ### 4. Edge functions
 ```bash
@@ -107,6 +115,7 @@ npx supabase functions deploy recovery-replan --no-verify-jwt
 npx supabase functions deploy journal-insight --no-verify-jwt
 npx supabase functions deploy goal-tips --no-verify-jwt
 npx supabase functions deploy midday-nudge --no-verify-jwt
+npx supabase functions deploy morning-chat --no-verify-jwt
 ```
 > Free OpenRouter models rotate — if a slug 404s ("No endpoints found"), pick a current one from [openrouter.ai/models?max_price=0](https://openrouter.ai/models?max_price=0) and set `OPENROUTER_MODEL`. The shared client auto-falls-through to a fallback model on 404. Free models also require enabling the data policy at [openrouter.ai/settings/privacy](https://openrouter.ai/settings/privacy).
 
@@ -132,14 +141,15 @@ npm run dev
 
 ```
 src/
-  components/   # Layout, UI primitives, Logo, Heatmap, CommandPalette,
-                # MilestoneBoard, Onboarding, ReminderManager, ErrorBoundary,
-                # ThemeToggle, three/FocusWorld (3D focus garden) …
+  components/   # Layout, UI primitives, Logo, Heatmap, CommandPalette, MilestoneBoard,
+                # Onboarding, ReminderManager, ErrorBoundary, GreetingBanner, Toaster,
+                # OfflineBanner, SlowIndicator, ThemeToggle, three/FocusWorld (3D worlds) …
   pages/        # Dashboard, Goals, GoalNew, GoalDetail, Habits, Calendar,
                 # Journal, Review, Analytics, Focus, Settings, check-ins, Landing, Login
   hooks/        # useGoals, useHabits, useCheckins, useLifeScore, useWeeklyReview,
                 # useAnalytics, useCalendar, useJournal, useFocus
-  lib/          # supabase, theme, reminders, markdown, queryClient, exportPdf
+  lib/          # supabase, theme, reminders, markdown, queryClient, exportPdf,
+                # quotes, toast, errors
 supabase/
   migrations/   # SQL schema + RLS
   functions/    # Deno edge functions (OpenRouter-powered) + _shared/ (auth, llm)

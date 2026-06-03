@@ -1,4 +1,4 @@
-import { PageTitle, Card, Button, EmptyState } from '../components/ui'
+import { PageTitle, Card, Button, EmptyState, ErrorState } from '../components/ui'
 import { useWeeklyReviews, useGenerateWeeklyReview, weekStart } from '../hooks/useWeeklyReview'
 import { printReview } from '../lib/exportPdf'
 
@@ -6,7 +6,7 @@ const fmtWeek = (d) =>
   new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 
 export default function Review() {
-  const { data: reviews = [], isLoading } = useWeeklyReviews()
+  const { data: reviews = [], isLoading, isError, refetch } = useWeeklyReviews()
   const generate = useGenerateWeeklyReview()
 
   const thisWeekDone = reviews.some((r) => r.week_start === weekStart())
@@ -27,7 +27,9 @@ export default function Review() {
         <p className="mb-4 text-sm text-danger">{String(generate.error.message || generate.error)}</p>
       )}
 
-      {isLoading ? (
+      {isError ? (
+        <ErrorState title="Couldn’t load your reviews" onRetry={refetch} />
+      ) : isLoading ? (
         <p className="text-faint">Loading…</p>
       ) : reviews.length === 0 ? (
         <EmptyState
@@ -56,7 +58,7 @@ function ReviewCard({ review, latest }) {
   const score = review.score_snapshot?.score
   return (
     <Card className={latest ? 'border-accent/30' : ''}>
-      <div className="mb-3 flex items-center justify-between gap-2">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <p className="font-display text-lg">Week of {fmtWeek(review.week_start)}</p>
         <div className="flex items-center gap-2">
           {typeof score === 'number' && (

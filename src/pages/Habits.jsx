@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { PageTitle, Card, Button, EmptyState } from '../components/ui'
+import { PageTitle, Card, Button, EmptyState, ErrorState } from '../components/ui'
 import Heatmap from '../components/Heatmap'
 import { useGoals } from '../hooks/useGoals'
 import {
@@ -19,7 +19,7 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const todayStr = () => new Date().toISOString().slice(0, 10)
 
 export default function Habits() {
-  const { data: habits = [], isLoading } = useHabits()
+  const { data: habits = [], isLoading, isError, refetch } = useHabits()
   const { data: logs = [] } = useHabitLogs(120)
   const { data: goals = [] } = useGoals({ status: 'Active' })
 
@@ -58,7 +58,9 @@ export default function Habits() {
         />
       )}
 
-      {isLoading ? (
+      {isError ? (
+        <ErrorState title="Couldn’t load your habits" onRetry={refetch} />
+      ) : isLoading ? (
         <p className="text-faint">Loading…</p>
       ) : habits.length === 0 ? (
         <EmptyState

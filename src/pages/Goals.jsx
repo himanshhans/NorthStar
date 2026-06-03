@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { PageTitle, Card, Button, EmptyState } from '../components/ui'
+import { PageTitle, Card, Button, EmptyState, ErrorState } from '../components/ui'
 import { useGoals } from '../hooks/useGoals'
 
 const cats = ['All', 'Personal', 'Career', 'Learning']
@@ -17,7 +17,7 @@ export default function Goals() {
   const [category, setCategory] = useState('All')
   const [status, setStatus] = useState('Active')
 
-  const { data: goals, isLoading } = useGoals({
+  const { data: goals, isLoading, isError, refetch } = useGoals({
     category: category === 'All' ? undefined : category,
     status: status === 'All' ? undefined : status,
   })
@@ -40,7 +40,9 @@ export default function Goals() {
         ))}
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <ErrorState title="Couldn’t load your goals" onRetry={refetch} />
+      ) : isLoading ? (
         <p className="text-faint">Loading…</p>
       ) : !goals?.length ? (
         <EmptyState

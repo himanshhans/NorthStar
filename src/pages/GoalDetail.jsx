@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { PageTitle, Card, Button, ProgressBar } from '../components/ui'
+import { PageTitle, Card, Button, ProgressBar, ErrorState } from '../components/ui'
 import {
   useGoal, useToggleMilestone, useUpdateGoalStatus, useUpdateGoalNotes,
   isOverdue, useRescheduleMilestone, useReplanMilestone, useGenerateTips,
@@ -16,7 +16,7 @@ const mInput =
 export default function GoalDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { data: goal, isLoading } = useGoal(id)
+  const { data: goal, isLoading, isError, refetch } = useGoal(id)
   const toggle = useToggleMilestone()
   const updateStatus = useUpdateGoalStatus()
   const del = useDeleteGoal()
@@ -25,6 +25,7 @@ export default function GoalDetail() {
   const [editId, setEditId] = useState(null)
   const [draft, setDraft] = useState({})
 
+  if (isError) return <ErrorState title="Couldn’t load this goal" onRetry={refetch} />
   if (isLoading) return <p className="text-faint">Loading…</p>
   if (!goal) return <p className="text-faint">Goal not found. <Link to="/goals" className="text-accent">Back</Link></p>
 

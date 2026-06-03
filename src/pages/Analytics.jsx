@@ -1,7 +1,7 @@
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { PageTitle, Card, EmptyState } from '../components/ui'
+import { PageTitle, Card, EmptyState, ErrorState } from '../components/ui'
 import Heatmap from '../components/Heatmap'
 import { useAnalytics } from '../hooks/useAnalytics'
 
@@ -27,8 +27,9 @@ const tooltipStyle = {
 }
 
 export default function Analytics() {
-  const { data, isLoading } = useAnalytics()
+  const { data, isLoading, isError, refetch } = useAnalytics()
 
+  if (isError) return (<><PageTitle title="Analytics" /><ErrorState title="Couldn’t load analytics" onRetry={refetch} /></>)
   if (isLoading) return (<><PageTitle title="Analytics" /><p className="text-faint">Loading…</p></>)
 
   const { lifeHistory = [], habitWeekly = [], checkinCounts = {} } = data || {}
@@ -51,7 +52,7 @@ export default function Analytics() {
             <p className="mb-4 text-sm text-muted">Life Score over time</p>
             {lifeHistory.length < 2 ? (
               <p className="py-8 text-center text-sm text-faint">
-                Need ≥2 weekly reviews to plot a trend. Generate one each week.
+                Your Life Score trend builds up daily — check back after a couple of days of use.
               </p>
             ) : (
               <ResponsiveContainer width="100%" height={220}>

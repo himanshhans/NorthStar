@@ -8,8 +8,19 @@
 //   OPENROUTER_MODEL_FALLBACK (optional)
 
 const BASE = "https://openrouter.ai/api/v1/chat/completions";
-const PRIMARY = Deno.env.get("OPENROUTER_MODEL") ?? "moonshotai/kimi-k2.6:free";
-const FALLBACK = Deno.env.get("OPENROUTER_MODEL_FALLBACK") ?? "google/gemma-4-31b-it:free";
+
+// Try several free models in order; a 429/5xx on one rolls to the next.
+// Override the first with OPENROUTER_MODEL. Verify live slugs at
+// https://openrouter.ai/models?max_price=0 (free catalogue rotates).
+const MODELS = [
+  ...(Deno.env.get("OPENROUTER_MODEL") ? [Deno.env.get("OPENROUTER_MODEL")] : []),
+  ...(Deno.env.get("OPENROUTER_MODEL_FALLBACK") ? [Deno.env.get("OPENROUTER_MODEL_FALLBACK")] : []),
+  "openrouter/owl-alpha",
+  "moonshotai/kimi-k2.6:free",
+  "nvidia/nemotron-3-super-120b-a12b:free",
+  "google/gemma-4-31b-it:free",
+  "google/gemma-4-26b-a4b-it:free",
+].filter((m, i, a) => m && a.indexOf(m) === i);
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -31,8 +42,8 @@ export async function callLLM({ prompt, system, json = false, temperature = 0.7 
   ];
 
   let lastErr = "";
-  for (const model of [PRIMARY, FALLBACK]) {
-    for (let attempt = 0; attempt < 3; attempt++) {
+  for (const model of MODELS) {
+    for (let attempt = 0; attempt < 2; attempt++) {
       const res = await fetch(BASE, {
         method: "POST",
         headers: {

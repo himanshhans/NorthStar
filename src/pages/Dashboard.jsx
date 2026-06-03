@@ -1,32 +1,31 @@
 import { useUser } from '@clerk/clerk-react'
 import { Link } from 'react-router-dom'
-import { PageTitle, Card, Button, ProgressBar, Skeleton } from '../components/ui'
+import { Card, Button, ProgressBar, Skeleton, ErrorState } from '../components/ui'
+import GreetingBanner from '../components/GreetingBanner'
+import { quoteOfDay } from '../lib/quotes'
 import { useGoals } from '../hooks/useGoals'
 import { useTodayCheckin } from '../hooks/useCheckins'
 import { useLifeScore } from '../hooks/useLifeScore'
+import { useTodayEvents } from '../hooks/useCalendar'
 
-function greeting() {
-  const h = new Date().getHours()
-  if (h < 12) return 'Good morning'
-  if (h < 18) return 'Good afternoon'
-  return 'Good evening'
-}
+const fmtTime = (t) => (t ? t.slice(0, 5) : 'all-day')
 
 export default function Dashboard() {
   const { user } = useUser()
   const name = user?.firstName || 'there'
 
-  const { data: goals = [], isLoading } = useGoals({ status: 'Active' })
+  const { data: goals = [], isLoading, isError, refetch } = useGoals({ status: 'Active' })
   const { data: morning } = useTodayCheckin('morning')
+  const { data: todayEvents = [] } = useTodayEvents()
   const focusTasks = morning?.content?.tasks || []
   const { data: life } = useLifeScore()
   const lifeScore = life?.score ?? 0
+  const quote = quoteOfDay()
 
   return (
     <>
-      <PageTitle
-        title={`${greeting()}, ${name}`}
-        subtitle="Here's where you stand today."
+      <GreetingBanner
+        name={name}
         action={<Button as="link" to="/goals/new">+ New goal</Button>}
       />
 
@@ -37,18 +36,27 @@ export default function Dashboard() {
             {lifeScore}
           </p>
           <ProgressBar value={lifeScore} className="mt-3" />
+
+          {/* what's driving it */}
           <div className="mt-4 space-y-2">
-            {['Personal', 'Career', 'Learning'].map((cat) => {
-              const v = life?.byCategory?.[cat]
-              return (
-                <div key={cat} className="flex items-center gap-2">
-                  <span className="w-16 text-xs text-faint">{cat}</span>
-                  <ProgressBar value={v ?? 0} className="flex-1" />
-                  <span className="w-8 text-right text-xs text-muted">{v ?? '—'}</span>
-                </div>
-              )
-            })}
+            {[['Goals', life?.parts?.milestone], ['Check-ins', life?.parts?.checkin], ['Habits', life?.parts?.habit]].map(([label, v]) => (
+              <div key={label} className="flex items-center gap-2">
+                <span className="w-16 text-xs text-faint">{label}</span>
+                <ProgressBar value={v ?? 0} className="flex-1" />
+                <span className="w-8 text-right text-xs text-muted">{v ?? '—'}</span>
+              </div>
+            ))}
           </div>
+          {life?.hint && <p className="mt-3 text-xs text-muted">{life.hint}</p>}
+
+          {/* per-category, compact */}
+          <p className="mt-3 border-t border-border pt-3 text-xs text-faint">
+            {['Personal', 'Career', 'Learning'].map((cat, i) => (
+              <span key={cat}>
+                {i > 0 && ' · '}{cat} <span className="text-muted">{life?.byCategory?.[cat] ?? '—'}</span>
+              </span>
+            ))}
+          </p>
         </Card>
 
         <Card className="md:col-span-2">
@@ -79,14 +87,43 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      {/* quote of the day */}
+      <div className="mt-5 rounded-xl border border-border bg-surface px-4 py-3">
+        <p className="text-sm text-muted">
+          <span className="text-accent">“</span>
+          <span className="italic text-fg">{quote.t}</span>
+          <span className="text-accent">”</span> — {quote.a}
+        </p>
+      </div>
+
       <div className="mt-5 flex flex-wrap gap-3">
         <Button as="link" to="/checkin/evening" variant="ghost">☾ Evening reflection</Button>
         <Button as="link" to="/habits" variant="ghost">▦ Habits</Button>
         <Button as="link" to="/review" variant="ghost">❧ Weekly review</Button>
       </div>
 
+      {todayEvents.length > 0 && (
+        <Card className="mt-6">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm text-muted">Today</p>
+            <Button as="link" to="/calendar" variant="subtle">Calendar</Button>
+          </div>
+          <ul className="space-y-1.5">
+            {todayEvents.map((e) => (
+              <li key={e.id} className="flex items-center gap-3 text-sm">
+                <span className="w-14 shrink-0 text-xs text-amber-500">{fmtTime(e.time)}</span>
+                <span className="truncate">{e.title}</span>
+                {e.end_date && e.end_date !== e.date && <span className="text-xs text-faint">(multi-day)</span>}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
       <h2 className="mb-3 mt-8 font-display text-xl">Active goals</h2>
-      {isLoading ? (
+      {isError ? (
+        <ErrorState title="Couldn’t load your goals" onRetry={refetch} />
+      ) : isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2">
           <Skeleton className="h-24" />
           <Skeleton className="h-24" />

@@ -1,5 +1,6 @@
 // Zoho-style time-of-day greeting with a blended sky scene on the right.
 function phaseOf(h) {
+  if (h < 5) return 'night'
   if (h < 12) return 'morning'
   if (h < 17) return 'afternoon'
   if (h < 21) return 'evening'

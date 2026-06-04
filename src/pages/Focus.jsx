@@ -3,10 +3,11 @@ import { PageTitle, Card, Button } from '../components/ui'
 import { FocusScene, CollectionScene, isBuilding } from '../components/three/FocusWorld'
 import { useFocusSessions, useSaveFocusSession, gardenStats, elementEmoji, pickElement, SPECIAL_MIN } from '../hooks/useFocus'
 
-const PRESETS = [15, 25, 50, 90]
+const PRESETS = [25, 50, 90]
+const MIN_MIN = 25
 const clampMin = (v) => {
   const n = Math.round(Number(v))
-  return Number.isFinite(n) && n > 0 ? Math.min(180, n) : 1
+  return Number.isFinite(n) ? Math.min(180, Math.max(MIN_MIN, n)) : MIN_MIN
 }
 const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 
@@ -134,10 +135,11 @@ export default function Focus() {
                 <div className="flex items-center gap-1">
                   <input
                     type="number"
-                    min="1"
+                    min="25"
                     max="180"
                     value={durationMin}
-                    onChange={(e) => setDurationMin(clampMin(e.target.value))}
+                    onChange={(e) => setDurationMin(Math.min(180, Math.round(Number(e.target.value)) || 0))}
+                    onBlur={(e) => setDurationMin(clampMin(e.target.value))}
                     className={`w-16 rounded-full border px-3 py-1.5 text-center text-sm focus:outline-none ${
                       PRESETS.includes(durationMin) ? 'border-border bg-bg text-fg' : 'border-accent bg-accent/5 text-fg'
                     }`}

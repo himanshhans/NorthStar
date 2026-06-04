@@ -1,12 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSupabase } from '../lib/supabase'
-
-const todayStr = () => new Date().toISOString().slice(0, 10)
-const daysAgoStr = (n) => {
-  const d = new Date()
-  d.setDate(d.getDate() - n)
-  return d.toISOString().slice(0, 10)
-}
+import { todayStr, daysAgoStr, localDay } from '../lib/date'
 
 export function useHabits() {
   const sb = useSupabase()
@@ -99,8 +93,8 @@ export function streakFor(logs, habitId) {
   let streak = 0
   const d = new Date()
   // allow streak to count if today not yet done but yesterday was
-  if (!done.has(d.toISOString().slice(0, 10))) d.setDate(d.getDate() - 1)
-  while (done.has(d.toISOString().slice(0, 10))) {
+  if (!done.has(localDay(d))) d.setDate(d.getDate() - 1)
+  while (done.has(localDay(d))) {
     streak++
     d.setDate(d.getDate() - 1)
   }

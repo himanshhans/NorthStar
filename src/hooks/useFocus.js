@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSupabase } from '../lib/supabase'
-
-const todayStr = () => new Date().toISOString().slice(0, 10)
+import { todayStr, localDay } from '../lib/date'
 
 // `sakura` / `landmark` are special — only awarded for 60+ min sessions, never in random pools.
 export const SPECIAL_MIN = 60
@@ -68,7 +67,7 @@ export function gardenStats(sessions = []) {
   const completed = sessions.filter((s) => s.completed)
   const todayMin = Math.round(
     completed
-      .filter((s) => s.created_at?.slice(0, 10) === todayStr())
+      .filter((s) => s.created_at && localDay(new Date(s.created_at)) === todayStr())
       .reduce((a, s) => a + (s.focused_sec || 0), 0) / 60,
   )
   const totalMin = Math.round(completed.reduce((a, s) => a + (s.focused_sec || 0), 0) / 60)

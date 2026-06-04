@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     const userId = await getUserId(req);
     if (!userId) return json({ error: "Unauthorized" }, 401);
 
-    const { name, today, goals = [], yesterday, messages = [] } = await req.json();
+    const { name, today, timeOfDay, goals = [], yesterday, messages = [] } = await req.json();
 
     const goalLines = goals.length
       ? goals.map((g: any) => `- ${g.title} (${g.category})`).join("\n")
@@ -40,12 +40,16 @@ Deno.serve(async (req) => {
       `You are NorthStar, but right now you're talking like a warm, encouraging friend doing a ` +
       `morning check-in. Casual, brief, second person. No corporate or coachy tone. 1-3 short ` +
       `sentences max. Use their name occasionally. Reference real context naturally (don't dump it). ` +
+      `Match your greeting to the actual time of day given below — DON'T say "morning" if it's ` +
+      `afternoon, evening, or late night. If it's not morning, briefly acknowledge they're planning ` +
+      `later than usual (no judgment) and frame the tasks as the rest of today. ` +
       `NEVER assume the user's tools, programming language, framework, or skill level if they ` +
       `haven't told you — ask a quick clarifying question instead of guessing.`;
 
     const prompt =
       `Friend's name: ${name || "there"}\n` +
-      `Today: ${today}\n\n` +
+      `Today: ${today}\n` +
+      `Time of day right now: ${timeOfDay || "morning"}\n\n` +
       `Their active goals:\n${goalLines}\n\n` +
       `Yesterday's reflection:\n${y}\n\n` +
       `Conversation so far:\n${transcript}\n\n` +

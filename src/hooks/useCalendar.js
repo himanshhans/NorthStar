@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSupabase } from '../lib/supabase'
+import { todayStr } from '../lib/date'
 
 // Bound the daily-growing tables to a window so the query stays fast as data piles up.
 const windowStart = () => {
@@ -7,7 +8,6 @@ const windowStart = () => {
   d.setDate(d.getDate() - 400)
   return d.toISOString().slice(0, 10)
 }
-const todayStr = () => new Date().toISOString().slice(0, 10)
 
 // all dates from start..end inclusive (capped), as 'YYYY-MM-DD'
 function dateRange(start, end) {

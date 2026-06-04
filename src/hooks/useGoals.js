@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSupabase } from '../lib/supabase'
+import { todayStr as isoToday, localDay } from '../lib/date'
 
 // --- Goals ---
 
@@ -205,8 +206,6 @@ export function useUpdateMilestonesBulk() {
 
 // --- Recovery / catch-up ---
 
-const isoToday = () => new Date().toISOString().slice(0, 10)
-
 /** A milestone is overdue if its due_date is past and it isn't done/skipped. */
 export function isOverdue(m) {
   return m.due_date && m.due_date < isoToday() && m.status !== 'Completed' && m.status !== 'Skipped'
@@ -222,7 +221,7 @@ export function useRescheduleMilestone() {
       d.setDate(d.getDate() + days)
       const { error } = await sb
         .from('milestones')
-        .update({ due_date: d.toISOString().slice(0, 10) })
+        .update({ due_date: localDay(d) })
         .eq('id', id)
       if (error) throw error
     },

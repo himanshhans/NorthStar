@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { PageTitle, Card, Button, EmptyState, ErrorState } from '../components/ui'
 import Heatmap from '../components/Heatmap'
 import { useGoals } from '../hooks/useGoals'
+import { todayStr } from '../lib/date'
 import {
   useHabits,
   useHabitLogs,
@@ -16,7 +17,6 @@ const input =
   'w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-fg placeholder:text-faint focus:border-accent focus:outline-none'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const todayStr = () => new Date().toISOString().slice(0, 10)
 
 export default function Habits() {
   const { data: habits = [], isLoading, isError, refetch } = useHabits()

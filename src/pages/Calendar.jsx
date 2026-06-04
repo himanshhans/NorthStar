@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { PageTitle, Card, Button, ErrorState } from '../components/ui'
 import { useCalendar, useAddEvent, useUpdateEvent, useDeleteEvent } from '../hooks/useCalendar'
+import { localDay as iso } from '../lib/date'
 
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const iso = (d) => d.toISOString().slice(0, 10)
 const todayIso = iso(new Date())
 const input =
   'w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-fg placeholder:text-faint focus:border-accent focus:outline-none'

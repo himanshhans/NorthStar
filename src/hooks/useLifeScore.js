@@ -1,20 +1,21 @@
 import { useQuery } from '@tanstack/react-query'
 import { useSupabase } from '../lib/supabase'
+import { localDay as iso } from '../lib/date'
 
 const DAY_MS = 86400000
-const iso = (d) => d.toISOString().slice(0, 10)
-const todayUTC = () => {
+// anchor at the user's LOCAL midnight so "today" matches stored (local) dates
+const todayLocal = () => {
   const t = new Date()
-  return new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate()))
+  return new Date(t.getFullYear(), t.getMonth(), t.getDate())
 }
-const daysAgo = (n) => iso(new Date(todayUTC().getTime() - n * DAY_MS))
+const daysAgo = (n) => iso(new Date(todayLocal().getTime() - n * DAY_MS))
 
-// dates ending today (UTC) with weekday, length n
+// dates ending today (local) with weekday, length n
 function lastDays(n) {
-  const end = todayUTC()
+  const end = todayLocal()
   return Array.from({ length: n }, (_, i) => {
     const d = new Date(end.getTime() - (n - 1 - i) * DAY_MS)
-    return { key: iso(d), dow: d.getUTCDay() }
+    return { key: iso(d), dow: d.getDay() }
   })
 }
 function expectedOn(habit, dow) {

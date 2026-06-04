@@ -1,13 +1,14 @@
 // Contribution heatmap: fills the container width (responsive square cells),
-// with month + weekday labels and a legend. Dates handled in UTC to match
-// how logs/check-ins are stored.
+// with month + weekday labels and a legend. Dates handled in the user's LOCAL
+// calendar to match how logs/check-ins are stored (lib/date).
+import { localDay as key } from '../lib/date'
+
 const DAY_MS = 86400000
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-const key = (d) => d.toISOString().slice(0, 10)
-function todayUTC() {
+function todayLocal() {
   const t = new Date()
-  return new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate()))
+  return new Date(t.getFullYear(), t.getMonth(), t.getDate())
 }
 
 // absolute buckets so 1 rep = light, more-per-day = darker (not relative to your max)
@@ -24,9 +25,9 @@ const bg = (lvl) =>
     : `color-mix(in srgb, var(--color-accent) ${[0, 25, 45, 70, 100][lvl]}%, transparent)`
 
 export default function Heatmap({ counts = {}, weeks = 26 }) {
-  const today = todayUTC()
+  const today = todayLocal()
   const start = new Date(today.getTime() - (weeks * 7 - 1) * DAY_MS)
-  start.setUTCDate(start.getUTCDate() - start.getUTCDay()) // snap to Sunday
+  start.setDate(start.getDate() - start.getDay()) // snap to Sunday
 
   const cols = []
   let cursor = new Date(start)
@@ -43,7 +44,7 @@ export default function Heatmap({ counts = {}, weeks = 26 }) {
   const monthLabels = cols.map((col) => {
     const first = col.find(Boolean)
     if (!first) return ''
-    const m = new Date(first.k).getUTCMonth()
+    const m = new Date(first.k + 'T00:00:00').getMonth()
     if (m !== lastMonth) { lastMonth = m; return MONTHS[m] }
     return ''
   })

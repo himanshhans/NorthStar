@@ -1,12 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSupabase } from '../lib/supabase'
-
-const todayStr = () => new Date().toISOString().slice(0, 10)
-const yesterdayStr = () => {
-  const d = new Date()
-  d.setDate(d.getDate() - 1)
-  return d.toISOString().slice(0, 10)
-}
+import { todayStr, yesterdayStr } from '../lib/date'
 
 /** Yesterday's evening reflection content (or null) — context for the morning chat. */
 export function useYesterdayEvening() {

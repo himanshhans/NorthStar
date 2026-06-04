@@ -2,10 +2,10 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useReminders, SLOTS } from '../lib/reminders'
 import { useTodayEvents } from '../hooks/useCalendar'
+import { todayStr } from '../lib/date'
 
 const FIRED_KEY = 'ns-reminded'
 const EVENT_FIRED_KEY = 'ns-event-fired'
-const todayStr = () => new Date().toISOString().slice(0, 10)
 
 function getFired() {
   try {

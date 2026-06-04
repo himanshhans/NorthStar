@@ -6,10 +6,17 @@ import { useGoals } from '../hooks/useGoals'
 import {
   useTodayCheckin, useSubmitCheckin, useMorningChat, useYesterdayEvening,
 } from '../hooks/useCheckins'
+import { todayStr, phaseOf } from '../lib/date'
 
 const input =
   'w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-fg placeholder:text-faint focus:border-accent focus:outline-none'
-const todayStr = () => new Date().toISOString().slice(0, 10)
+const GREET = { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening', night: 'Hey' }
+const SUBTITLE = {
+  morning: "A quick chat to set today's focus.",
+  afternoon: 'Planning a little later today? Let’s line up the rest of it.',
+  evening: 'Setting intentions for the evening — or a fresh start tomorrow.',
+  night: 'Up late? Let’s pick a couple of gentle wins for today.',
+}
 
 export default function CheckinMorning() {
   const { user } = useUser()
@@ -43,11 +50,11 @@ export default function CheckinMorning() {
     ;(async () => {
       setBusy(true)
       try {
-        const r = await chat.mutateAsync({ name, today: todayStr(), goals: goalsForFn(goals), yesterday, messages: [] })
+        const r = await chat.mutateAsync({ name, today: todayStr(), timeOfDay: phaseOf(), goals: goalsForFn(goals), yesterday, messages: [] })
         setConvo([{ role: 'assistant', content: r.reply }])
         if (r.tasks.length) setTasks(mapTasks(r.tasks))
       } catch {
-        setConvo([{ role: 'assistant', content: `Morning, ${name}! What would make today a win?` }])
+        setConvo([{ role: 'assistant', content: `${GREET[phaseOf()]}, ${name}! What would make today a win?` }])
       } finally {
         setBusy(false)
       }
@@ -66,7 +73,7 @@ export default function CheckinMorning() {
     setDraft('')
     setBusy(true)
     try {
-      const r = await chat.mutateAsync({ name, today: todayStr(), goals: goalsForFn(goals), yesterday, messages: next })
+      const r = await chat.mutateAsync({ name, today: todayStr(), timeOfDay: phaseOf(), goals: goalsForFn(goals), yesterday, messages: next })
       setConvo([...next, { role: 'assistant', content: r.reply }])
       if (r.tasks.length) setTasks(mapTasks(r.tasks))
     } catch (e) {
@@ -91,7 +98,7 @@ export default function CheckinMorning() {
     <>
       <PageTitle
         title="Morning intention"
-        subtitle="A quick chat to set today's focus."
+        subtitle={SUBTITLE[phaseOf()]}
         action={done ? <Button variant="ghost" onClick={() => { setRedo(true); opened.current = false; setConvo([]); setTasks([]) }}>Chat again</Button> : null}
       />
 
